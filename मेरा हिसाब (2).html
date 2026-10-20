@@ -1,0 +1,2452 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>मेरा हिसाब</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600&family=Tiro+Devanagari+Hindi&display=swap">
+<style>
+/* Layout: one narrow ledger page. Summary card with a double-rule total, a bahi-khata
+   style table with separate जमा and खर्च columns, a fixed add bar at the bottom, and an
+   add sheet that slides up. Ink-blue is the only accent; green and red are for money only. */
+:root {
+  --bg: #F1F5F0;
+  --surface: #FAFCF9;
+  --fg: #18241F;
+  --muted: #5A6A61;
+  --rule: #CBD8CE;
+  --rule-strong: #9DB1A4;
+  --ink: #1D4B5C;
+  --in: #1B7347;
+  --out: #B1352C;
+  --in-tint: #E1F0E6;
+  --out-tint: #F7E4E1;
+  --in-solid: #1B7347;
+  --out-solid: #B1352C;
+  --warn: #A66A00;
+  --on-solid: #FFFFFF;
+  --scrim: rgba(12, 22, 17, 0.45);
+  --font-body: 'Hind', 'Noto Sans Devanagari', system-ui, sans-serif;
+  --font-display: 'Tiro Devanagari Hindi', 'Noto Serif Devanagari', Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1512;
+    --surface: #151E1A;
+    --fg: #E4EDE7;
+    --muted: #94A79C;
+    --rule: #2B3A32;
+    --rule-strong: #44584D;
+    --ink: #7FBFD3;
+    --in: #5CC48B;
+    --out: #F0877D;
+    --in-tint: #15291D;
+    --out-tint: #301A18;
+    --in-solid: #3DAA75;
+    --out-solid: #E2625A;
+    --warn: #E3B84F;
+    --on-solid: #08120D;
+    --scrim: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1512;
+  --surface: #151E1A;
+  --fg: #E4EDE7;
+  --muted: #94A79C;
+  --rule: #2B3A32;
+  --rule-strong: #44584D;
+  --ink: #7FBFD3;
+  --in: #5CC48B;
+  --out: #F0877D;
+  --in-tint: #15291D;
+  --out-tint: #301A18;
+  --in-solid: #3DAA75;
+  --out-solid: #E2625A;
+  --warn: #E3B84F;
+  --on-solid: #08120D;
+  --scrim: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.55 var(--font-body);
+  padding-top: 20px;
+  padding-bottom: calc(176px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+html.lock { overflow: hidden; }
+.wrap { max-width: 560px; margin: 0 auto; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+button { font-family: inherit; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 16px; }
+h1 { margin: 0; font: 400 28px/1.3 var(--font-display); text-wrap: balance; }
+.months { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--rule); border-radius: 999px; }
+.months button { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: var(--ink); font-size: 24px; line-height: 1; cursor: pointer; }
+.months button:disabled { color: var(--rule-strong); cursor: default; }
+#monthLabel { min-width: 104px; text-align: center; font-weight: 600; }
+
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 18px 18px 16px; }
+.label { margin: 0; color: var(--muted); font-size: 14px; }
+.big { margin: 4px 0 16px; display: inline-block; max-width: 100%; overflow-wrap: anywhere; font: 400 clamp(32px, 10vw, 44px)/1.25 var(--font-display); font-variant-numeric: tabular-nums; border-bottom: 4px double var(--rule-strong); }
+.big.pos { color: var(--in); }
+.big.neg { color: var(--out); }
+.big.zero { color: var(--fg); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pair > div { min-width: 0; }
+.pair > div + div { border-left: 1px solid var(--rule); padding-left: 12px; }
+.pair .k { display: block; font-size: 14px; color: var(--muted); }
+.pair .v { display: block; font: 400 22px/1.4 var(--font-display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pair .in .v { color: var(--in); }
+.pair .out .v { color: var(--out); }
+
+.sec { margin: 28px 0 10px; font: 400 21px/1.35 var(--font-display); }
+
+.cats { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 6px 16px; }
+.cat { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.cat:last-child { border-bottom: 0; }
+.cat .nm { min-width: 0; overflow-wrap: anywhere; }
+.cat .am { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.track { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--out-tint); overflow: hidden; }
+.fill { height: 100%; border-radius: 4px; background: var(--out-solid); }
+
+.ledger { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; }
+table { width: 100%; min-width: 300px; border-collapse: collapse; }
+th { padding: 10px; text-align: right; font-size: 14px; font-weight: 600; color: var(--muted); border-bottom: 2px solid var(--rule-strong); white-space: nowrap; }
+th:first-child { text-align: left; padding-left: 12px; }
+th.in { color: var(--in); }
+th.out { color: var(--out); }
+td { padding: 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
+td.amt { padding: 10px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; border-left: 1px solid var(--rule); }
+td.amt.in { color: var(--in); }
+td.amt.out { color: var(--out); }
+.dategroup td { padding: 6px 12px; background: var(--bg); color: var(--muted); font-size: 13px; font-weight: 500; }
+.rowbtn { display: block; width: 100%; min-height: 44px; padding: 10px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.rowbtn .c { display: block; font-weight: 500; overflow-wrap: anywhere; }
+.rowbtn .n { display: block; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.detail td { padding: 8px 12px 12px; background: var(--bg); }
+.acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ask { font-weight: 500; }
+.btn-s { min-height: 40px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 10px; background: var(--surface); color: var(--fg); font-size: 15px; cursor: pointer; }
+.btn-danger { color: var(--out); border-color: var(--out); }
+.btn-danger.solid { background: var(--out-solid); border-color: var(--out-solid); color: var(--on-solid); }
+tfoot td { padding: 10px; border-top: 3px double var(--rule-strong); border-bottom: 0; font-weight: 600; }
+tfoot td:first-child { padding-left: 12px; }
+tfoot td.amt { border-left: 1px solid var(--rule); }
+
+.empty { padding: 20px; border: 1.5px dashed var(--rule-strong); border-radius: 14px; color: var(--muted); }
+.empty strong { display: block; margin-bottom: 6px; color: var(--fg); font: 400 19px/1.45 var(--font-display); }
+.empty p { margin: 0; }
+.empty ul { margin: 8px 0 0; padding-left: 20px; }
+
+.foot { margin: 18px 0 0; font-size: 13px; color: var(--muted); }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--rule); padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.bar .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.voice { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; border: 0; border-radius: 14px; background: var(--ink); color: var(--bg); font: 600 18px/1.2 var(--font-body); cursor: pointer; }
+.voice svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sheet.voicemode .quick { border-style: solid; border-color: var(--ink); }
+.sheet.voicemode #quick { min-height: 96px; font-size: 20px; }
+.sheet.voicemode .quick-row .btn-s { display: none; }
+.preview { margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--rule); font-size: 15px; }
+.preview b { font: 400 22px/1.3 var(--font-display); font-variant-numeric: tabular-nums; }
+.preview.in b { color: var(--in); }
+.preview.out b { color: var(--out); }
+.add { min-height: 52px; border: 0; border-radius: 12px; color: var(--on-solid); font: 600 17px/1.2 var(--font-body); cursor: pointer; }
+.add.in { background: var(--in-solid); }
+.add.out { background: var(--out-solid); }
+.add:disabled { opacity: 0.5; cursor: default; }
+
+.scrim { position: fixed; inset: 0; z-index: 20; background: var(--scrim); }
+.sheet { --tone: var(--out-solid); position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 92vh; max-height: 92dvh; overflow-y: auto; background: var(--surface); color: var(--fg); border-radius: 18px 18px 0 0; padding-top: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sheet[data-type="in"] { --tone: var(--in-solid); }
+.sheet-title { margin: 0 0 12px; font: 400 22px/1.35 var(--font-display); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 14px; border: 1px solid var(--rule-strong); border-radius: 12px; overflow: hidden; }
+.seg button { min-height: 44px; border: 0; background: var(--surface); color: var(--fg); font: 500 16px/1.2 var(--font-body); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--tone); color: var(--on-solid); }
+.field { display: block; margin-bottom: 14px; }
+.field > span { display: block; margin-bottom: 4px; font-size: 14px; color: var(--muted); }
+.field input { display: block; width: 100%; min-height: 48px; padding: 8px 12px; border: 1px solid var(--rule-strong); border-radius: 10px; background: var(--bg); color: var(--fg); font: inherit; }
+#amount { font: 400 28px/1.4 var(--font-display); font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 999px; background: var(--surface); color: var(--fg); font-size: 15px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--tone); border-color: var(--tone); color: var(--on-solid); }
+.quick { margin-bottom: 14px; padding: 12px; border: 1px dashed var(--rule-strong); border-radius: 12px; background: var(--bg); }
+.quick .field { margin-bottom: 0; }
+.field textarea { display: block; width: 100%; min-height: 64px; padding: 8px 12px; border: 1px solid var(--rule-strong); border-radius: 10px; background: var(--surface); color: var(--fg); font: inherit; resize: vertical; }
+.quick-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 8px; }
+.hint { margin: 0; min-width: 0; flex: 1 1 180px; font-size: 13px; color: var(--muted); }
+#quickMsg { margin-top: 8px; color: var(--fg); }
+.err { margin: 0 0 10px; color: var(--out); font-size: 14px; }
+.acts2 { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.cancel, .save { min-height: 52px; border-radius: 12px; font: 600 17px/1.2 var(--font-body); cursor: pointer; }
+.cancel { border: 1px solid var(--rule-strong); background: var(--surface); color: var(--fg); }
+.save { border: 0; background: var(--tone); color: var(--on-solid); }
+.save:disabled { opacity: 0.6; }
+
+.budget { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule); }
+.budget .label { margin-bottom: 6px; }
+.btrack { height: 10px; border-radius: 5px; background: var(--rule); overflow: hidden; }
+.bfill { height: 100%; border-radius: 5px; background: var(--in-solid); }
+.bfill.warn { background: var(--warn); }
+.bfill.over { background: var(--out-solid); }
+.brow { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; }
+.brow .t { min-width: 0; font-variant-numeric: tabular-nums; }
+.brow .t.over { color: var(--out); font-weight: 600; }
+.search input { display: block; width: 100%; min-height: 46px; padding: 8px 12px; border: 1px solid var(--rule-strong); border-radius: 10px; background: var(--surface); color: var(--fg); font: inherit; }
+.search { margin-bottom: 12px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.sheet.editing .quick { display: none; }
+.add.plain { background: var(--surface); color: var(--fg); border: 1px solid var(--rule-strong); }
+.due { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; padding: 10px 14px; border: 1px solid var(--warn); border-radius: 12px; background: var(--surface); }
+.due .t { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.rlist { display: flex; flex-direction: column; gap: 10px; }
+.ritem { padding: 14px 16px; border: 1px solid var(--rule); border-radius: 14px; background: var(--surface); }
+.rtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 12px; }
+.rname { min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.rkind { display: inline-block; margin-right: 6px; padding: 0 8px; border: 1px solid var(--rule-strong); border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.ramt { font: 400 20px/1.3 var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rstat { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.rstat.late { color: var(--out); font-weight: 600; }
+.rstat.soon { color: var(--warn); font-weight: 600; }
+.rstat.paid, .rstat.done { color: var(--in); }
+.rprog { margin-top: 8px; }
+.ract { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.btn-pay { background: var(--in-solid); border-color: var(--in-solid); color: var(--on-solid); font-weight: 600; }
+.btn-pay:disabled { opacity: 0.5; }
+.calc-out { margin: 4px 0 14px; padding: 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--bg); }
+.calc-out dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 0; }
+.calc-out dt { color: var(--muted); }
+.calc-out dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.calc-out dd.big2 { font: 400 22px/1.3 var(--font-display); color: var(--ink); }
+.tabs { grid-template-columns: repeat(3, 1fr) !important; }
+.tabs button { font-size: 15px !important; padding: 0 4px; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 16px; border: 1px solid var(--rule-strong); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.tabs button { min-height: 46px; border: 0; background: var(--surface); color: var(--fg); font: 500 16px/1.2 var(--font-body); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); font-weight: 600; }
+a.btn-s { display: inline-flex; align-items: center; text-decoration: none; }
+.sheet.ink { --tone: var(--ink); }
+.khata-list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; }
+.crow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; width: 100%; min-height: 64px; padding: 10px 16px; border: 0; border-bottom: 1px solid var(--rule); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.crow:last-child { border-bottom: 0; }
+.crow .nm { display: block; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.crow .ph { display: block; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.crow .bl { text-align: right; font-variant-numeric: tabular-nums; }
+.crow .bl b { display: block; font: 400 20px/1.3 var(--font-display); }
+.crow .bl span { display: block; font-size: 13px; color: var(--muted); }
+.crow .bl.pos b { color: var(--in); }
+.crow .bl.neg b { color: var(--out); }
+.chead { margin: 14px 0 12px; }
+.chead h2 { margin: 0; font: 400 26px/1.3 var(--font-display); overflow-wrap: anywhere; }
+.chead p { margin: 0; }
+.remind { margin-top: 14px; padding: 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); }
+.remind textarea { display: block; width: 100%; margin: 6px 0 10px; padding: 8px 12px; border: 1px solid var(--rule-strong); border-radius: 10px; background: var(--bg); color: var(--fg); font: inherit; resize: vertical; }
+.danger-zone { margin-top: 24px; }
+.bar .wrap.one { grid-template-columns: 1fr; }
+.add.ink { background: var(--ink); color: var(--bg); }
+#amount, #tamount { font: 400 28px/1.4 var(--font-display); font-variant-numeric: tabular-nums; }
+.toast { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); z-index: 30; max-width: calc(100% - 32px); transform: translateX(-50%); padding: 10px 18px; border-radius: 999px; background: var(--fg); color: var(--bg); font-size: 15px; text-align: center; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet { animation: rise 0.22s ease-out; }
+  @keyframes rise { from { transform: translateY(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>मेरा हिसाब</h1>
+    <nav class="months" id="monthsNav" aria-label="महीना बदलें">
+      <button type="button" id="prev" aria-label="पिछला महीना">‹</button>
+      <div id="monthLabel" aria-live="polite"></div>
+      <button type="button" id="next" aria-label="अगला महीना">›</button>
+    </nav>
+  </header>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="हिसाब का प्रकार">
+    <button type="button" id="tabMain" role="tab" aria-selected="true">रोज़ का हिसाब</button>
+    <button type="button" id="tabKhata" role="tab" aria-selected="false">उधार खाता</button>
+    <button type="button" id="tabRecur" role="tab" aria-selected="false">EMI · SIP · बिल</button>
+  </nav>
+
+  <div id="mainView">
+    <div id="dueBanner" class="due" hidden></div>
+    <section id="summary" aria-label="महीने का सार"></section>
+    <section id="breakdown"></section>
+    <section>
+      <h2 class="sec" id="ledgerTitle">हिसाब की बही</h2>
+      <label class="field search" for="search">
+        <input id="search" type="search" autocomplete="off" placeholder="खोजिए: श्रेणी, विवरण या रकम" aria-label="पुरानी एंट्री खोजें">
+      </label>
+      <div id="ledger"></div>
+      <div class="tools"><button type="button" id="exportBtn" class="btn-s" hidden>रिपोर्ट डाउनलोड करें (Excel)</button></div>
+    </section>
+  </div>
+  <div id="khataView" hidden></div>
+  <div id="contactView" hidden></div>
+  <div id="recurView" hidden></div>
+  <p id="foot" class="foot"></p>
+  <p id="dbg" class="foot" hidden></p>
+</div>
+
+<div class="bar" id="barKhata" hidden>
+  <div class="wrap one">
+    <button type="button" id="addContact" class="add ink">+ नया संपर्क जोड़ें</button>
+  </div>
+</div>
+
+<div class="bar" id="barRecur" hidden>
+  <div class="wrap">
+    <button type="button" id="calcBtn" class="add plain">EMI · SIP कैलकुलेटर</button>
+    <button type="button" id="addRec" class="add ink">+ नया भुगतान</button>
+  </div>
+</div>
+
+<div class="bar" id="barContact" hidden>
+  <div class="wrap">
+    <button type="button" id="gaveBtn" class="add out">− मैंने दिया</button>
+    <button type="button" id="gotBtn" class="add in">+ मुझे मिला</button>
+  </div>
+</div>
+
+<div class="bar" id="barMain">
+  <div class="wrap">
+    <button type="button" id="voice" class="voice">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+      बोलकर लिखें
+    </button>
+    <button type="button" id="addIn" class="add in">+ आमदनी</button>
+    <button type="button" id="addOut" class="add out">− खर्च</button>
+  </div>
+</div>
+
+<div id="scrim" class="scrim" hidden></div>
+
+<form id="sheet" class="sheet" data-type="out" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" novalidate hidden>
+  <div class="wrap">
+    <h2 id="sheetTitle" class="sheet-title">खर्च जोड़ें</h2>
+    <div class="quick">
+      <label class="field" for="quick">
+        <span id="quickLabel">बोलकर या मैसेज से भरें</span>
+        <textarea id="quick" rows="2" maxlength="600" autocomplete="off" spellcheck="false" placeholder="जैसे: दूध 60 रुपये खर्च"></textarea>
+      </label>
+      <div class="quick-row">
+        <button type="button" id="quickFill" class="btn-s">भर दें</button>
+        <p class="hint">कीबोर्ड पर माइक का निशान दबाकर बोलिए, या बैंक/UPI का मैसेज यहाँ पेस्ट कीजिए। बोलना रुकते ही नीचे अपने आप भर जाएगा।</p>
+      </div>
+      <p id="quickMsg" class="preview" role="status" hidden></p>
+    </div>
+    <div class="seg" role="group" aria-label="आमदनी या खर्च">
+      <button type="button" id="segIn" aria-pressed="false">आमदनी</button>
+      <button type="button" id="segOut" aria-pressed="true">खर्च</button>
+    </div>
+    <label class="field" for="amount">
+      <span>रकम (₹)</span>
+      <input id="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+    </label>
+    <div class="field">
+      <span id="catLabel">किस चीज़ का? (चुनना ज़रूरी नहीं)</span>
+      <div id="chips" class="chips" role="group" aria-labelledby="catLabel"></div>
+    </div>
+    <label class="field" for="note">
+      <span>विवरण (वैकल्पिक)</span>
+      <input id="note" type="text" maxlength="80" autocomplete="off">
+    </label>
+    <label class="field" for="date">
+      <span>तारीख़</span>
+      <input id="date" type="date">
+    </label>
+    <p id="err" class="err" role="alert" hidden></p>
+    <div class="acts2">
+      <button type="button" id="cancel" class="cancel">रद्द करें</button>
+      <button type="submit" id="save" class="save">सेव करें</button>
+    </div>
+  </div>
+</form>
+
+<form id="cform" class="sheet ink" data-type="out" role="dialog" aria-modal="true" aria-labelledby="cTitle" novalidate hidden>
+  <div class="wrap">
+    <h2 id="cTitle" class="sheet-title">नया संपर्क</h2>
+    <label class="field" for="cname">
+      <span>नाम</span>
+      <input id="cname" type="text" maxlength="60" autocomplete="off" placeholder="जैसे: रमेश भैया">
+    </label>
+    <label class="field" for="cphone">
+      <span>मोबाइल नंबर (वैकल्पिक)</span>
+      <input id="cphone" type="tel" inputmode="tel" maxlength="16" autocomplete="off" placeholder="जैसे: 9876543210">
+    </label>
+    <p id="cerr" class="err" role="alert" hidden></p>
+    <div class="acts2">
+      <button type="button" id="ccancel" class="cancel">रद्द करें</button>
+      <button type="submit" id="csave" class="save">संपर्क जोड़ें</button>
+    </div>
+  </div>
+</form>
+
+<form id="rform" class="sheet ink" data-type="out" role="dialog" aria-modal="true" aria-labelledby="rTitle" novalidate hidden>
+  <div class="wrap">
+    <h2 id="rTitle" class="sheet-title">नया नियमित भुगतान</h2>
+    <div class="field">
+      <span id="rkLabel">किस तरह का?</span>
+      <div id="rkinds" class="chips" role="group" aria-labelledby="rkLabel"></div>
+    </div>
+    <label class="field" for="rname">
+      <span>नाम</span>
+      <input id="rname" type="text" maxlength="60" autocomplete="off" placeholder="जैसे: बाइक की EMI, SIP, मोबाइल बिल">
+    </label>
+    <label class="field" for="ramount">
+      <span>हर महीने की रकम (₹)</span>
+      <input id="ramount" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+    </label>
+    <label class="field" for="rday">
+      <span>हर महीने किस तारीख़ को? (1 से 31)</span>
+      <input id="rday" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="जैसे: 5">
+    </label>
+    <label class="field" for="rtotal">
+      <span>कुल किस्तें (खाली छोड़ें तो चलता रहेगा)</span>
+      <input id="rtotal" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="जैसे: 24">
+    </label>
+    <label class="field" for="rpaid">
+      <span>अब तक कितनी किस्तें भर चुके हैं?</span>
+      <input id="rpaid" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0">
+    </label>
+    <p id="rerr" class="err" role="alert" hidden></p>
+    <div class="acts2">
+      <button type="button" id="rcancel" class="cancel">रद्द करें</button>
+      <button type="submit" id="rsave" class="save">सेव करें</button>
+    </div>
+  </div>
+</form>
+
+<form id="calcform" class="sheet ink" data-type="out" role="dialog" aria-modal="true" aria-labelledby="calcTitle" novalidate hidden>
+  <div class="wrap">
+    <h2 id="calcTitle" class="sheet-title">कैलकुलेटर</h2>
+    <div class="seg" role="group" aria-label="कैलकुलेटर चुनें">
+      <button type="button" id="calcEmi" aria-pressed="true">EMI</button>
+      <button type="button" id="calcSip" aria-pressed="false">SIP</button>
+    </div>
+    <label class="field" for="c1"><span id="c1l"></span><input id="c1" type="text" inputmode="decimal" autocomplete="off"></label>
+    <label class="field" for="c2"><span id="c2l"></span><input id="c2" type="text" inputmode="decimal" autocomplete="off"></label>
+    <label class="field" for="c3"><span id="c3l"></span><input id="c3" type="text" inputmode="decimal" autocomplete="off"></label>
+    <div class="calc-out" id="calcOut" role="status" aria-live="polite"></div>
+    <p class="hint" id="calcNote" style="margin:0 0 14px"></p>
+    <div class="acts2">
+      <button type="button" id="calcClose" class="cancel">बंद करें</button>
+    </div>
+  </div>
+</form>
+
+<form id="bform" class="sheet ink" data-type="out" role="dialog" aria-modal="true" aria-labelledby="bTitle" novalidate hidden>
+  <div class="wrap">
+    <h2 id="bTitle" class="sheet-title">महीने का बजट</h2>
+    <label class="field" for="bamount">
+      <span>इस महीने में कितना खर्च करना है? (₹)</span>
+      <input id="bamount" type="text" inputmode="decimal" autocomplete="off" placeholder="जैसे: 15000">
+    </label>
+    <p class="hint" style="margin:-6px 0 14px">यही बजट हर महीने पर लागू रहेगा। हटाने के लिए 0 लिखिए।</p>
+    <p id="berr" class="err" role="alert" hidden></p>
+    <div class="acts2">
+      <button type="button" id="bcancel" class="cancel">रद्द करें</button>
+      <button type="submit" id="bsave" class="save">बजट सेव करें</button>
+    </div>
+  </div>
+</form>
+
+<form id="tform" class="sheet" data-type="out" role="dialog" aria-modal="true" aria-labelledby="tTitle" novalidate hidden>
+  <div class="wrap">
+    <h2 id="tTitle" class="sheet-title">मैंने दिया</h2>
+    <label class="field" for="tamount">
+      <span>रकम (₹)</span>
+      <input id="tamount" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+    </label>
+    <label class="field" for="tnote">
+      <span>विवरण (वैकल्पिक)</span>
+      <input id="tnote" type="text" maxlength="80" autocomplete="off" placeholder="जैसे: राशन का सामान">
+    </label>
+    <label class="field" for="tdate">
+      <span>तारीख़</span>
+      <input id="tdate" type="date">
+    </label>
+    <p id="terr" class="err" role="alert" hidden></p>
+    <div class="acts2">
+      <button type="button" id="tcancel" class="cancel">रद्द करें</button>
+      <button type="submit" id="tsave" class="save">सेव करें</button>
+    </div>
+  </div>
+</form>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var MONTHS = ['जनवरी', 'फ़रवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'];
+  var DAYS = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
+  var CATS = {
+    out: ['खाना-पीना', 'सब्ज़ी-राशन', 'किराया', 'बिजली-पानी', 'मोबाइल रिचार्ज', 'यात्रा-पेट्रोल', 'दवाई-इलाज', 'पढ़ाई', 'कपड़े', 'EMI-किस्त', 'SIP-निवेश', 'बिल-सब्सक्रिप्शन', 'अन्य'],
+    'in': ['वेतन', 'दुकान-कारोबार', 'मज़दूरी', 'खेती', 'उधार वापसी', 'तोहफ़ा', 'अन्य']
+  };
+  var STORE_KEY = 'mera-hisab-v1';
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function dstr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function today() { return dstr(new Date()); }
+  function ymOf(s) { return s.slice(0, 7); }
+  function monthName(ym) { var p = ym.split('-'); return MONTHS[+p[1] - 1] + ' ' + p[0]; }
+  function shift(ym, delta) {
+    var p = ym.split('-');
+    var d = new Date(+p[0], +p[1] - 1 + delta, 1);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1);
+  }
+  function dateLabel(s) {
+    var p = s.split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var t = (+p[2]) + ' ' + MONTHS[+p[1] - 1] + ', ' + DAYS[d.getDay()];
+    return s === today() ? t + ' · आज' : t;
+  }
+  // c is an integer number of paise
+  function fmt(c) {
+    var a = Math.abs(c);
+    var n = a / 100;
+    var frac = a % 100 !== 0;
+    try {
+      return n.toLocaleString('en-IN', { minimumFractionDigits: frac ? 2 : 0, maximumFractionDigits: 2 });
+    } catch (e) {
+      return n.toFixed(frac ? 2 : 0);
+    }
+  }
+  function cents(e) { return Math.round(e.amount * 100); }
+
+  function clean(o) {
+    if (!o || (o.type !== 'in' && o.type !== 'out')) return null;
+    var a = Number(o.amount);
+    if (!isFinite(a) || a <= 0) return null;
+    if (typeof o.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(o.date)) return null;
+    return {
+      id: String(o.id),
+      type: o.type,
+      amount: a,
+      cat: typeof o.cat === 'string' && o.cat ? o.cat : 'अन्य',
+      note: typeof o.note === 'string' ? o.note : '',
+      date: o.date,
+      ts: Number(o.ts) || 0
+    };
+  }
+  function sorted(list) {
+    return list.slice().sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return b.ts - a.ts;
+    });
+  }
+  function sums(list) {
+    var i = 0, o = 0;
+    list.forEach(function (e) { if (e.type === 'in') i += cents(e); else o += cents(e); });
+    return { 'in': i, out: o, bal: i - o };
+  }
+
+  var state = {
+    entries: [],
+    mode: 'loading',
+    month: ymOf(today()),
+    openId: null,
+    confirmId: null,
+    focusKey: null,
+    type: 'out',
+    cat: '',
+    localOk: true,
+    view: 'main',
+    contacts: [],
+    txns: [],
+    contactId: null,
+    tOpenId: null,
+    tConfirmId: null,
+    delAsk: false,
+    tKind: 'gave',
+    budget: 0,
+    query: '',
+    editId: null,
+    tEditId: null,
+    recs: [],
+    rKind: 'emi',
+    rEditId: null,
+    rConfirm: null,
+    calcMode: 'emi'
+  };
+  var backend = null;
+  var lastOpener = null;
+  var toastTimer = null;
+
+  /* ---------- drawing ---------- */
+
+  function renderTop() {
+    $('monthLabel').textContent = monthName(state.month);
+    $('next').disabled = state.month >= ymOf(today());
+  }
+
+  function stat(label, c, kind) {
+    var d = el('div', kind);
+    d.appendChild(el('span', 'k', label));
+    d.appendChild(el('span', 'v', '₹' + fmt(c)));
+    return d;
+  }
+
+  function renderSummary(list) {
+    var s = sums(list);
+    var box = $('summary');
+    box.textContent = '';
+    var neg = s.bal < 0;
+    var card = el('div', 'card');
+    card.appendChild(el('p', 'label', neg ? 'कमी (खर्च, जमा से ज़्यादा)' : 'बचत (जमा − खर्च)'));
+    var tone = s.bal === 0 ? 'zero' : (neg ? 'neg' : 'pos');
+    card.appendChild(el('p', 'big ' + tone, (neg ? '−' : '') + '₹' + fmt(s.bal)));
+    var pair = el('div', 'pair');
+    pair.appendChild(stat('जमा', s['in'], 'in'));
+    pair.appendChild(stat('खर्च', s.out, 'out'));
+    card.appendChild(pair);
+
+    var bud = el('div', 'budget');
+    var bcents = Math.round((state.budget || 0) * 100);
+    var bbtn = el('button', 'btn-s', bcents > 0 ? 'बजट बदलें' : 'महीने का बजट तय करें');
+    bbtn.type = 'button';
+    bbtn.addEventListener('click', function () { openBudgetForm(this); });
+    if (bcents > 0) {
+      var pct = Math.round(s.out / bcents * 100);
+      var over = s.out > bcents;
+      bud.appendChild(el('p', 'label', 'महीने का बजट ₹' + fmt(bcents) + ' · खर्च हुआ ' + pct + '%'));
+      var track = el('div', 'btrack');
+      track.setAttribute('role', 'progressbar');
+      track.setAttribute('aria-valuemin', '0');
+      track.setAttribute('aria-valuemax', '100');
+      track.setAttribute('aria-valuenow', String(Math.min(100, pct)));
+      var fill = el('div', 'bfill' + (over ? ' over' : (pct >= 80 ? ' warn' : '')));
+      fill.style.width = Math.min(100, Math.max(2, pct)) + '%';
+      track.appendChild(fill);
+      bud.appendChild(track);
+      var row = el('div', 'brow');
+      row.appendChild(el('span', 't' + (over ? ' over' : ''), over ? '₹' + fmt(s.out - bcents) + ' ज़्यादा खर्च हो गया' : '₹' + fmt(bcents - s.out) + ' बचे हैं'));
+      row.appendChild(bbtn);
+      bud.appendChild(row);
+    } else {
+      bud.appendChild(bbtn);
+    }
+    card.appendChild(bud);
+    box.appendChild(card);
+  }
+
+  function renderBreakdown(list) {
+    var box = $('breakdown');
+    box.textContent = '';
+    var by = {};
+    list.forEach(function (e) {
+      if (e.type === 'out') by[e.cat] = (by[e.cat] || 0) + cents(e);
+    });
+    var rows = Object.keys(by).map(function (k) { return { k: k, v: by[k] }; })
+      .sort(function (a, b) { return b.v - a.v; });
+    if (!rows.length) return;
+    box.appendChild(el('h2', 'sec', 'खर्च कहाँ हुआ'));
+    var wrap = el('div', 'cats');
+    rows.forEach(function (r) {
+      var row = el('div', 'cat');
+      row.appendChild(el('span', 'nm', r.k));
+      row.appendChild(el('span', 'am', '₹' + fmt(r.v)));
+      var track = el('div', 'track');
+      var fill = el('div', 'fill');
+      fill.style.width = Math.max(4, Math.round(r.v / rows[0].v * 100)) + '%';
+      track.appendChild(fill);
+      row.appendChild(track);
+      wrap.appendChild(row);
+    });
+    box.appendChild(wrap);
+  }
+
+  function emptyCard() {
+    var d = el('div', 'empty');
+    if (state.mode === 'loading') {
+      d.appendChild(el('strong', null, 'हिसाब खुल रहा है…'));
+      d.appendChild(el('p', null, 'कुछ सेकंड रुकिए।'));
+      return d;
+    }
+    d.appendChild(el('strong', null, 'इस महीने अभी कोई हिसाब नहीं'));
+    d.appendChild(el('p', null, 'नीचे के बटन से आमदनी और खर्च लिखिए। जैसे:'));
+    var ul = el('ul');
+    ['वेतन ₹25,000 (आमदनी)', 'दूध ₹60 (खर्च)', 'मोबाइल रिचार्ज ₹299 (खर्च)'].forEach(function (t) {
+      ul.appendChild(el('li', null, t));
+    });
+    d.appendChild(ul);
+    return d;
+  }
+
+  function amtCell(e, kind) {
+    return el('td', 'amt ' + kind, e.type === kind ? fmt(cents(e)) : '');
+  }
+
+  function detailRow(e) {
+    var tr = el('tr', 'detail');
+    var td = el('td');
+    td.colSpan = 3;
+    var acts = el('div', 'acts');
+    if (state.confirmId === e.id) {
+      acts.appendChild(el('span', 'ask', 'पक्का हटाएँ?'));
+      var yes = el('button', 'btn-s btn-danger solid', 'हाँ, हटाएँ');
+      yes.type = 'button';
+      yes.dataset.fk = 'yes-' + e.id;
+      yes.addEventListener('click', function () { doDelete(e.id); });
+      var no = el('button', 'btn-s', 'नहीं');
+      no.type = 'button';
+      no.dataset.fk = 'no-' + e.id;
+      no.addEventListener('click', function () {
+        state.confirmId = null;
+        state.focusKey = 'del-' + e.id;
+        render();
+      });
+      acts.appendChild(yes);
+      acts.appendChild(no);
+    } else {
+      var ed = el('button', 'btn-s', 'सुधारें');
+      ed.type = 'button';
+      ed.addEventListener('click', function () { openEdit(e, this); });
+      acts.appendChild(ed);
+      var del = el('button', 'btn-s btn-danger', 'यह हिसाब हटाएँ');
+      del.type = 'button';
+      del.dataset.fk = 'del-' + e.id;
+      del.addEventListener('click', function () {
+        state.confirmId = e.id;
+        state.focusKey = 'no-' + e.id;
+        render();
+      });
+      acts.appendChild(del);
+    }
+    td.appendChild(acts);
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function toggleRow(id) {
+    state.openId = state.openId === id ? null : id;
+    state.confirmId = null;
+    state.focusKey = 'row-' + id;
+    render();
+  }
+
+  function searchResults(q) {
+    var nq = norm(q);
+    var num = q.replace(/[,₹\s]/g, '');
+    return state.entries.filter(function (e) {
+      return norm(e.cat).indexOf(nq) >= 0 || norm(e.note).indexOf(nq) >= 0 || (num && String(e.amount).indexOf(num) >= 0);
+    });
+  }
+
+  function renderLedger(list) {
+    var box = $('ledger');
+    box.textContent = '';
+    var q = state.query.trim();
+    $('ledgerTitle').textContent = q ? 'खोज के नतीजे (सभी महीने)' : 'हिसाब की बही';
+    $('exportBtn').hidden = !(list.length && !q);
+    if (q) {
+      list = searchResults(q);
+      if (!list.length) {
+        var none = el('div', 'empty');
+        none.appendChild(el('strong', null, 'कुछ नहीं मिला'));
+        none.appendChild(el('p', null, 'श्रेणी, विवरण या रकम बदलकर खोजिए।'));
+        box.appendChild(none);
+        return;
+      }
+    }
+    if (!list.length) {
+      box.appendChild(emptyCard());
+      return;
+    }
+    var wrap = el('div', 'ledger');
+    var table = el('table');
+    table.setAttribute('aria-label', 'इस महीने की बही');
+
+    var cg = el('colgroup');
+    cg.appendChild(el('col'));
+    ['27%', '27%'].forEach(function (w) { var c = el('col'); c.style.width = w; cg.appendChild(c); });
+    table.appendChild(cg);
+
+    var thead = el('thead');
+    var hr = el('tr');
+    [['विवरण', ''], ['जमा ₹', 'in'], ['खर्च ₹', 'out']].forEach(function (h) {
+      var th = el('th', h[1], h[0]);
+      th.scope = 'col';
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    var tb = el('tbody');
+    var lastDate = '';
+    sorted(list).forEach(function (e) {
+      if (e.date !== lastDate) {
+        lastDate = e.date;
+        var gr = el('tr', 'dategroup');
+        var gd = el('td', null, dateLabel(e.date));
+        gd.colSpan = 3;
+        gr.appendChild(gd);
+        tb.appendChild(gr);
+      }
+      var tr = el('tr', 'entry');
+      var td = el('td');
+      var b = el('button', 'rowbtn');
+      b.type = 'button';
+      b.dataset.fk = 'row-' + e.id;
+      b.setAttribute('aria-expanded', state.openId === e.id ? 'true' : 'false');
+      b.appendChild(el('span', 'c', e.cat));
+      if (e.note) b.appendChild(el('span', 'n', e.note));
+      b.addEventListener('click', function () { toggleRow(e.id); });
+      td.appendChild(b);
+      tr.appendChild(td);
+      tr.appendChild(amtCell(e, 'in'));
+      tr.appendChild(amtCell(e, 'out'));
+      tb.appendChild(tr);
+      if (state.openId === e.id) tb.appendChild(detailRow(e));
+    });
+    table.appendChild(tb);
+
+    var s = sums(list);
+    var tf = el('tfoot');
+    var fr = el('tr');
+    fr.appendChild(el('td', null, 'कुल'));
+    fr.appendChild(el('td', 'amt in', fmt(s['in'])));
+    fr.appendChild(el('td', 'amt out', fmt(s.out)));
+    tf.appendChild(fr);
+    table.appendChild(tf);
+
+    wrap.appendChild(table);
+    box.appendChild(wrap);
+  }
+
+  function renderFoot() {
+    var t = {
+      loading: 'हिसाब खुल रहा है…',
+      db: 'आपका हिसाब आपके खाते में सुरक्षित रहता है और सिर्फ़ आपको दिखता है।',
+      local: 'साइन-इन न होने से हिसाब सिर्फ़ इसी ब्राउज़र में रहेगा।',
+      error: 'हिसाब खुल नहीं पाया। पेज बंद करके दोबारा खोलें।'
+    }[state.mode];
+    if (state.mode === 'local' && !state.localOk) {
+      t = 'इस ब्राउज़र में हिसाब सेव नहीं हो पा रहा। पेज बंद करते ही मिट जाएगा।';
+    }
+    $('foot').textContent = t;
+  }
+
+  function render() {
+    var list = state.entries.filter(function (e) { return ymOf(e.date) === state.month; });
+    renderTabs();
+    if (state.view === 'main') {
+      renderTop();
+      renderSummary(list);
+      renderBreakdown(list);
+      renderLedger(list);
+      renderDue();
+    } else if (state.view === 'khata') {
+      renderKhata();
+    } else if (state.view === 'recur') {
+      renderRecur();
+    } else {
+      renderContact();
+    }
+    renderFoot();
+    if (state.focusKey) {
+      var t = document.querySelector('[data-fk="' + state.focusKey + '"]');
+      state.focusKey = null;
+      if (t) t.focus();
+    }
+  }
+
+  function showToast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 2400);
+  }
+
+  /* ---------- add sheet ---------- */
+
+  function buildChips() {
+    var box = $('chips');
+    box.textContent = '';
+    CATS[state.type].forEach(function (name) {
+      var b = el('button', 'chip', name);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', function () {
+        state.cat = state.cat === name ? '' : name;
+        Array.prototype.forEach.call(box.children, function (c) {
+          c.setAttribute('aria-pressed', c.textContent === state.cat ? 'true' : 'false');
+        });
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function setType(t) {
+    state.type = t;
+    state.cat = '';
+    $('sheet').dataset.type = t;
+    $('sheetTitle').textContent = state.editId ? 'एंट्री सुधारें' : (t === 'in' ? 'आमदनी जोड़ें' : 'खर्च जोड़ें');
+    $('segIn').setAttribute('aria-pressed', t === 'in' ? 'true' : 'false');
+    $('segOut').setAttribute('aria-pressed', t === 'out' ? 'true' : 'false');
+    $('note').placeholder = t === 'in' ? 'जैसे: अक्टूबर का वेतन' : 'जैसे: दूध, बिजली बिल';
+    buildChips();
+  }
+
+  function showErr(msg) {
+    var p = $('err');
+    p.textContent = msg;
+    p.hidden = false;
+  }
+
+  function openEdit(e, opener) {
+    openSheet(e.type, opener, false);
+    state.editId = e.id;
+    $('sheet').classList.add('editing');
+    setType(e.type);
+    state.cat = e.cat;
+    markChips();
+    $('amount').value = String(e.amount);
+    $('note').value = e.note;
+    $('date').value = e.date;
+    $('save').textContent = 'बदलाव सेव करें';
+  }
+
+  function openSheet(type, opener, voice) {
+    lastOpener = opener || null;
+    state.editId = null;
+    $('sheet').classList.remove('editing');
+    $('save').textContent = 'सेव करें';
+    setType(type);
+    $('sheet').classList.toggle('voicemode', !!voice);
+    $('quickLabel').textContent = voice ? 'बोलिए: कीबोर्ड का माइक दबाइए' : 'बोलकर या मैसेज से भरें';
+    $('amount').value = '';
+    $('note').value = '';
+    $('date').value = today();
+    $('quick').value = '';
+    $('quickMsg').hidden = true;
+    $('err').hidden = true;
+    $('save').disabled = false;
+    $('scrim').hidden = false;
+    $('sheet').hidden = false;
+    document.documentElement.classList.add('lock');
+    setTimeout(function () { $(voice ? 'quick' : 'amount').focus(); }, 60);
+  }
+
+  function closeSheet() {
+    $('sheet').hidden = true;
+    $('cform').hidden = true;
+    $('tform').hidden = true;
+    $('bform').hidden = true;
+    $('rform').hidden = true;
+    $('calcform').hidden = true;
+    state.editId = null;
+    state.tEditId = null;
+    state.rEditId = null;
+    $('scrim').hidden = true;
+    document.documentElement.classList.remove('lock');
+    if (lastOpener) lastOpener.focus();
+  }
+
+  function parseAmount(raw) {
+    var s = String(raw)
+      .replace(/[०-९]/g, function (c) { return String(c.charCodeAt(0) - 0x966); })
+      .replace(/[,\s₹]/g, '');
+    return Number(s);
+  }
+
+  /* ---------- quick entry: a spoken sentence or a pasted bank / UPI message ---------- */
+
+  // Lower-case, drop nukta, unify chandrabindu, Hindi digits to 0-9, strip commas inside numbers.
+  function norm(s) {
+    return String(s).toLowerCase().normalize('NFD')
+      .replace(/़/g, '')
+      .replace(/ँ/g, 'ं')
+      .replace(/[०-९]/g, function (c) { return String(c.charCodeAt(0) - 0x966); })
+      .replace(/(\d),(?=\d)/g, '$1');
+  }
+
+  var NUM_RAW = {
+    'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'पाँच': 5, 'छह': 6, 'छः': 6, 'छे': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10,
+    'ग्यारह': 11, 'बारह': 12, 'तेरह': 13, 'चौदह': 14, 'पंद्रह': 15, 'पन्द्रह': 15, 'सोलह': 16, 'सत्रह': 17, 'अठारह': 18, 'उन्नीस': 19, 'बीस': 20,
+    'इक्कीस': 21, 'बाईस': 22, 'तेईस': 23, 'चौबीस': 24, 'पच्चीस': 25, 'छब्बीस': 26, 'सत्ताईस': 27, 'अट्ठाईस': 28, 'अठाईस': 28, 'उनतीस': 29, 'तीस': 30,
+    'इकतीस': 31, 'बत्तीस': 32, 'तैंतीस': 33, 'चौंतीस': 34, 'पैंतीस': 35, 'छत्तीस': 36, 'सैंतीस': 37, 'अड़तीस': 38, 'उनतालीस': 39, 'चालीस': 40,
+    'इकतालीस': 41, 'बयालीस': 42, 'तैंतालीस': 43, 'चवालीस': 44, 'पैंतालीस': 45, 'छियालीस': 46, 'सैंतालीस': 47, 'अड़तालीस': 48, 'उनचास': 49, 'पचास': 50,
+    'इक्यावन': 51, 'बावन': 52, 'तिरपन': 53, 'चौवन': 54, 'पचपन': 55, 'छप्पन': 56, 'सत्तावन': 57, 'अट्ठावन': 58, 'उनसठ': 59, 'साठ': 60,
+    'इकसठ': 61, 'बासठ': 62, 'तिरसठ': 63, 'चौंसठ': 64, 'पैंसठ': 65, 'छियासठ': 66, 'सड़सठ': 67, 'अड़सठ': 68, 'उनहत्तर': 69, 'सत्तर': 70,
+    'इकहत्तर': 71, 'बहत्तर': 72, 'तिहत्तर': 73, 'चौहत्तर': 74, 'पचहत्तर': 75, 'छिहत्तर': 76, 'सतहत्तर': 77, 'अठहत्तर': 78, 'उन्यासी': 79, 'अस्सी': 80,
+    'इक्यासी': 81, 'बयासी': 82, 'तिरासी': 83, 'चौरासी': 84, 'पचासी': 85, 'छियासी': 86, 'सत्तासी': 87, 'अठासी': 88, 'नवासी': 89, 'नब्बे': 90,
+    'इक्यानवे': 91, 'बानवे': 92, 'तिरानवे': 93, 'चौरानवे': 94, 'पचानवे': 95, 'छियानवे': 96, 'सत्तानवे': 97, 'अट्ठानवे': 98, 'निन्यानवे': 99,
+    'ढाई': 2.5, 'डेढ़': 1.5, 'डेढ': 1.5
+  };
+  var MULT_RAW = { 'सौ': 100, 'हज़ार': 1000, 'हजार': 1000, 'लाख': 100000, 'hundred': 100, 'thousand': 1000, 'lakh': 100000, 'lac': 100000 };
+  var NUMN = {};
+  var MULTN = {};
+  Object.keys(NUM_RAW).forEach(function (k) { NUMN[norm(k)] = NUM_RAW[k]; });
+  Object.keys(MULT_RAW).forEach(function (k) { MULTN[norm(k)] = MULT_RAW[k]; });
+
+  var STOP = {};
+  ['रुपये', 'रुपए', 'रुपया', 'रु', 'rs', 'inr', 'खर्च', 'खर्चा', 'आमदनी', 'हुआ', 'हुए', 'किया', 'दिया', 'दिए', 'दिये', 'मिला', 'मिले', 'आया', 'आए', 'की', 'का', 'के', 'में', 'से', 'को', 'आज', 'कल', 'परसों']
+    .forEach(function (w) { STOP[norm(w)] = true; });
+
+  var OUT_STRONG = ['debited', 'spent', 'withdrawn', 'deducted', 'खर्च', 'काटे', 'कटे', 'कट गए'];
+  var OUT_WEAK = ['paid', 'payment', 'purchase', 'sent', 'charged', 'दिया', 'दिए', 'दिये', 'भेजा', 'भेजे', 'भुगतान', 'खरीदा', 'खरीदी', 'भरा', 'चुकाया', 'चुकाए'];
+  var IN_STRONG = ['credited', 'received', 'deposited', 'आमदनी', 'कमाई', 'वेतन', 'salary'];
+  var IN_WEAK = ['refund', 'मिला', 'मिले', 'आया', 'आए', 'आई', 'जमा', 'प्राप्त'];
+
+  var KW = {
+    out: [
+      ['EMI-किस्त', ['emi', 'किस्त', 'ईएमआई']],
+      ['SIP-निवेश', ['sip', 'एसआईपी', 'म्यूचुअल', 'mutual fund']],
+      ['बिल-सब्सक्रिप्शन', ['सब्सक्रिप्शन', 'subscription', 'netflix', 'hotstar', 'prime', 'dth', 'बीमा', 'insurance', 'lic']],
+      ['सब्ज़ी-राशन', ['सब्ज़ी', 'सब्जी', 'राशन', 'किराना', 'आटा', 'चावल', 'दाल', 'तेल', 'चीनी', 'grocery', 'bigbasket', 'blinkit', 'zepto', 'dmart', 'instamart', 'kirana']],
+      ['खाना-पीना', ['दूध', 'खाना', 'चाय', 'नाश्ता', 'होटल', 'ढाबा', 'रेस्टोरेंट', 'zomato', 'swiggy', 'restaurant', 'cafe', 'hotel', 'dhaba', 'pizza', 'food']],
+      ['किराया', ['किराया', 'रेंट', 'rent']],
+      ['बिजली-पानी', ['बिजली', 'पानी', 'electricity', 'bijli', 'bses', 'tata power', 'water bill']],
+      ['मोबाइल रिचार्ज', ['रिचार्ज', 'recharge', 'jio', 'airtel', 'vodafone', 'bsnl', 'डेटा पैक']],
+      ['यात्रा-पेट्रोल', ['पेट्रोल', 'डीजल', 'petrol', 'diesel', 'fuel', 'uber', 'ola', 'rapido', 'irctc', 'टिकट', 'ticket', 'ऑटो', 'fastag', 'metro', 'यात्रा', 'भाड़ा']],
+      ['दवाई-इलाज', ['दवाई', 'दवा', 'डॉक्टर', 'अस्पताल', 'इलाज', 'pharmacy', 'apollo', 'medplus', 'hospital', 'medical', 'pharmeasy', '1mg']],
+      ['पढ़ाई', ['फीस', 'स्कूल', 'कॉलेज', 'किताब', 'कोचिंग', 'school', 'fees', 'tuition', 'college']],
+      ['कपड़े', ['कपड़े', 'कपड़ा', 'myntra', 'ajio', 'shirt', 'जूते', 'साड़ी']]
+    ],
+    'in': [
+      ['वेतन', ['वेतन', 'तनख्वाह', 'सैलरी', 'salary']],
+      ['दुकान-कारोबार', ['दुकान', 'बिक्री', 'कारोबार', 'धंधा', 'sales']],
+      ['मज़दूरी', ['मज़दूरी', 'मजदूरी', 'दिहाड़ी']],
+      ['खेती', ['खेती', 'फसल', 'किसान']],
+      ['उधार वापसी', ['उधार', 'वापस', 'लौटाए']],
+      ['तोहफ़ा', ['तोहफ़ा', 'तोहफा', 'गिफ्ट', 'शगुन', 'gift']]
+    ]
+  };
+
+  function hit(t, kw) {
+    var k = norm(kw);
+    if (/^[a-z0-9 ]+$/.test(k)) return new RegExp('(^|[^a-z0-9])' + k + '([^a-z0-9]|$)').test(t);
+    return t.indexOf(k) >= 0;
+  }
+  function score(t, list) {
+    return list.reduce(function (n, w) { return n + (hit(t, w) ? 1 : 0); }, 0);
+  }
+  function canonCat(type, name) {
+    var found = '';
+    CATS[type].forEach(function (c) { if (norm(c) === norm(name)) found = c; });
+    return found;
+  }
+
+  function clip(tok) {
+    return tok.replace(/^[^\p{L}\p{M}\p{N}]+|[^\p{L}\p{M}\p{N}]+$/gu, '');
+  }
+  function tokNum(t) {
+    var km = /^(\d+(?:\.\d+)?)k$/.exec(t);
+    if (km) return { kind: 'n', v: Number(km[1]) * 1000 };
+    if (/^\d+(\.\d+)?$/.test(t)) return { kind: 'n', v: Number(t) };
+    if (Object.prototype.hasOwnProperty.call(NUMN, t)) return { kind: 'n', v: NUMN[t] };
+    if (Object.prototype.hasOwnProperty.call(MULTN, t)) return { kind: 'm', v: MULTN[t] };
+    return null;
+  }
+  // First run of number tokens. Runs with real digits win over runs made only of Hindi words.
+  function findAmount(tokens) {
+    for (var pass = 0; pass < 2; pass++) {
+      var i = 0;
+      while (i < tokens.length) {
+        if (!tokNum(tokens[i])) { i++; continue; }
+        var total = 0, cur = 0, digit = false, j = i;
+        for (; j < tokens.length; j++) {
+          var t = tokNum(tokens[j]);
+          if (!t) break;
+          if (/\d/.test(tokens[j])) digit = true;
+          if (t.kind === 'n') cur += t.v;
+          else if (t.v === 100) cur = (cur || 1) * 100;
+          else { total += (cur || 1) * t.v; cur = 0; }
+        }
+        var value = total + cur;
+        if (value > 0 && (pass === 1 || digit)) return { value: value, start: i, end: j };
+        i = j;
+      }
+    }
+    return null;
+  }
+
+  var MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+  function mkDate(y, mo, d) {
+    if (y < 100) y += 2000;
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    var dt = new Date(y, mo - 1, d);
+    if (dt.getMonth() !== mo - 1) return null;
+    var s = dstr(dt);
+    return s > today() ? null : s;
+  }
+  function dateFrom(raw, t) {
+    var m = /\b(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4}|\d{2})\b/.exec(raw);
+    if (m) return mkDate(+m[3], +m[2], +m[1]);
+    m = /\b(\d{1,2})[-\s]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s,]*(\d{4}|\d{2})\b/i.exec(raw);
+    if (m) return mkDate(+m[3], MON[m[2].toLowerCase()], +m[1]);
+    var tk = t.split(/\s+/);
+    var off = tk.indexOf('कल') >= 0 ? 1 : (tk.indexOf('परसों') >= 0 ? 2 : 0);
+    if (off) {
+      var d = new Date();
+      d.setDate(d.getDate() - off);
+      return dstr(d);
+    }
+    return null;
+  }
+
+  function merchantOf(raw) {
+    var re = /\b(?:to|at|from)\s+([A-Za-z0-9@&._ -]{2,40}?)(?=\s+(?:on|ref|upi|via|using|avl|bal|a\/c|acct|txn|for|dated|is|has|was)\b|[,;(]|\.\s|\.$|$)/gi;
+    var m;
+    while ((m = re.exec(raw)) !== null) {
+      var s = m[1].trim().replace(/^vpa\s+/i, '').replace(/[-._ ]+$/, '');
+      if (s && !/^(?:your|my|the|a|an|account|a\/c|acct|x+\d+)\b/i.test(s)) return s;
+    }
+    return '';
+  }
+
+  // Returns {type, amount, cat, note, date} or null when no amount can be found.
+  function parseQuick(raw) {
+    var t = norm(raw);
+    var amount = null;
+    var re = /(?:(?:^|[^a-z])(?:rs\.?|inr)|₹|रु\.?|रुपये|रुपए|रुपया)\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:rs\b|inr\b|रुपये|रुपए|रुपया|\/-)/g;
+    var m;
+    while ((m = re.exec(t)) !== null) {
+      var before = t.slice(Math.max(0, m.index - 30), m.index);
+      if (/bal|avl|available|limit|बैलेंस|शेष/.test(before)) continue;
+      amount = Number(m[1] || m[2]);
+      break;
+    }
+    // tokens and rawTokens line up one to one, so the note can keep the original spelling
+    var tokens = t.split(/\s+/).map(clip);
+    var rawTokens = raw.split(/\s+/).map(clip);
+    var run = null;
+    if (amount === null) {
+      run = findAmount(tokens);
+      if (run) amount = run.value;
+    }
+    if (amount === null || !isFinite(amount) || amount <= 0) return null;
+    amount = Math.round(amount * 100) / 100;
+
+    var so = score(t, OUT_STRONG) * 3 + score(t, OUT_WEAK);
+    var si = score(t, IN_STRONG) * 3 + score(t, IN_WEAK);
+    var type = si > so ? 'in' : 'out';
+
+    var cat = '';
+    var rows = KW[type];
+    for (var i = 0; i < rows.length && !cat; i++) {
+      if (rows[i][1].some(function (k) { return hit(t, k); })) cat = canonCat(type, rows[i][0]);
+    }
+
+    var isSms = /debited|credited|spent|a\/c|acct|\bupi\b|\btxn\b|avl bal|avl limit|ref no|\bvpa\b|\bimps\b|\bneft\b|\bcard\b|xx\d{3,4}/.test(t);
+    var note;
+    if (isSms) {
+      note = merchantOf(raw);
+    } else {
+      note = rawTokens.filter(function (w, idx) {
+        if (!w) return false;
+        if (run && idx >= run.start && idx < run.end) return false;
+        return !(/^\d/.test(tokens[idx]) || STOP[tokens[idx]]);
+      }).join(' ');
+    }
+    return { type: type, amount: amount, cat: cat, note: note.slice(0, 80), date: dateFrom(raw, t) || today() };
+  }
+
+  function markChips() {
+    Array.prototype.forEach.call($('chips').children, function (c) {
+      c.setAttribute('aria-pressed', state.cat && c.textContent === state.cat ? 'true' : 'false');
+    });
+  }
+
+  function applyQuick(auto) {
+    var raw = $('quick').value.trim();
+    var msg = $('quickMsg');
+    if (!raw) {
+      msg.hidden = auto === true;
+      msg.className = 'preview';
+      if (auto !== true) msg.textContent = 'पहले बोलकर लिखिए या मैसेज पेस्ट कीजिए।';
+      return;
+    }
+    var r = parseQuick(raw);
+    if (!r) {
+      if (auto === true) { msg.hidden = true; return; }
+      msg.hidden = false;
+      msg.className = 'preview';
+      msg.textContent = 'रकम समझ नहीं आई। रकम अंकों में लिखिए, जैसे: दूध 60 रुपये खर्च';
+      return;
+    }
+    msg.hidden = false;
+    msg.className = 'preview ' + r.type;
+    setType(r.type);
+    state.cat = r.cat;
+    markChips();
+    $('amount').value = String(r.amount);
+    $('note').value = r.note;
+    $('date').value = r.date;
+    $('err').hidden = true;
+    msg.textContent = '';
+    msg.appendChild(document.createTextNode('समझा: ' + (r.type === 'in' ? 'आमदनी ' : 'खर्च ')));
+    msg.appendChild(el('b', null, '₹' + fmt(Math.round(r.amount * 100))));
+    msg.appendChild(document.createTextNode((r.cat ? ' · ' + r.cat : '') + '। गलत हो तो नीचे ठीक कीजिए, फिर सेव करें दबाइए।'));
+  }
+
+  async function submitSheet(ev) {
+    ev.preventDefault();
+    var amt = parseAmount($('amount').value);
+    if (!isFinite(amt) || amt <= 0) {
+      showErr('रकम लिखिए, जो 0 से ज़्यादा हो। जैसे: 250');
+      $('amount').focus();
+      return;
+    }
+    if (amt > 999999999) {
+      showErr('रकम बहुत बड़ी है। कृपया जाँच लें।');
+      return;
+    }
+    amt = Math.round(amt * 100) / 100;
+    var d = $('date').value || today();
+    var entry = {
+      type: state.type,
+      amount: amt,
+      cat: state.cat || 'अन्य',
+      note: $('note').value.trim().slice(0, 80),
+      date: d,
+      ts: Date.now()
+    };
+    if (!backend) {
+      showErr('हिसाब अभी खुल रहा है। एक पल रुककर फिर से सेव दबाइए।');
+      return;
+    }
+    var editing = state.editId;
+    if (editing) {
+      var orig = state.entries.filter(function (x) { return x.id === editing; })[0];
+      if (orig) entry.ts = orig.ts;
+    }
+    var btn = $('save');
+    btn.disabled = true;
+    var timedOut = false;
+    try {
+      // Never leave the sheet stuck: if the store is slow to answer, close anyway and report later.
+      var write = Promise.resolve(editing ? backend.update(editing, entry) : backend.add(entry));
+      var slow = new Promise(function (resolve) {
+        setTimeout(function () { timedOut = true; resolve(); }, 4000);
+      });
+      await Promise.race([write, slow]);
+      if (timedOut) {
+        write.catch(function () { showToast('सेव नहीं हो पाया। हिसाब जाँच लीजिए।'); });
+      }
+      state.month = ymOf(d);
+      state.openId = null;
+      state.confirmId = null;
+      closeSheet();
+      render();
+      showToast(timedOut ? 'सेव हो रहा है…' : 'सेव हो गया');
+    } catch (e) {
+      showErr(e && e.code === 'quota_exceeded'
+        ? 'जगह भर गई है। कुछ पुराने हिसाब हटाइए।'
+        : 'सेव नहीं हो पाया। दोबारा कोशिश कीजिए।');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function doDelete(id) {
+    try {
+      await backend.remove(id);
+      state.openId = null;
+      state.confirmId = null;
+      showToast('हटा दिया');
+    } catch (e) {
+      showToast('हट नहीं पाया। दोबारा कोशिश कीजिए।');
+    }
+    render();
+  }
+
+  /* ---------- udhaar khata: contacts with their own give / get ledger ---------- */
+
+  function cleanContact(o) {
+    if (!o || typeof o.name !== 'string' || !o.name.trim()) return null;
+    return { id: String(o.id), name: o.name.trim(), phone: typeof o.phone === 'string' ? o.phone : '', ts: Number(o.ts) || 0 };
+  }
+  function cleanTxn(o) {
+    if (!o || (o.kind !== 'gave' && o.kind !== 'got') || typeof o.contactId !== 'string') return null;
+    var a = Number(o.amount);
+    if (!isFinite(a) || a <= 0) return null;
+    if (typeof o.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(o.date)) return null;
+    return { id: String(o.id), contactId: o.contactId, kind: o.kind, amount: a, note: typeof o.note === 'string' ? o.note : '', date: o.date, ts: Number(o.ts) || 0 };
+  }
+  function txnsOf(cid) {
+    return state.txns.filter(function (t) { return t.contactId === cid; });
+  }
+  // Positive: this person owes you. Negative: you owe this person. Paise.
+  function balOf(cid) {
+    var b = 0;
+    txnsOf(cid).forEach(function (t) { b += t.kind === 'gave' ? cents(t) : -cents(t); });
+    return b;
+  }
+  function digitsOf(s) { return String(s || '').replace(/\D/g, ''); }
+  function waLink(phone, text) {
+    var d = digitsOf(phone);
+    if (d.length === 10) d = '91' + d;
+    if (d.length < 11) return '';
+    return 'https://wa.me/' + d + '?text=' + encodeURIComponent(text);
+  }
+  function remindText(c, bal) {
+    return 'नमस्ते ' + c.name + ' जी, हिसाब के अनुसार आपके ₹' + fmt(bal) + ' बाकी हैं। कृपया जल्दी भेज दीजिए। धन्यवाद।';
+  }
+  function balClass(b) { return b > 0 ? 'pos' : (b < 0 ? 'neg' : 'zero'); }
+  function balWord(b) { return b > 0 ? 'मिलेंगे' : (b < 0 ? 'देने हैं' : 'हिसाब बराबर'); }
+
+  function goView(v, cid) {
+    state.view = v;
+    state.contactId = cid || null;
+    state.tOpenId = null;
+    state.tConfirmId = null;
+    state.delAsk = false;
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function renderTabs() {
+    var v = state.view;
+    $('tabs').hidden = v === 'contact';
+    $('monthsNav').hidden = v !== 'main';
+    $('tabMain').setAttribute('aria-selected', v === 'main' ? 'true' : 'false');
+    $('tabKhata').setAttribute('aria-selected', v === 'khata' || v === 'contact' ? 'true' : 'false');
+    $('tabRecur').setAttribute('aria-selected', v === 'recur' ? 'true' : 'false');
+    $('mainView').hidden = v !== 'main';
+    $('khataView').hidden = v !== 'khata';
+    $('contactView').hidden = v !== 'contact';
+    $('recurView').hidden = v !== 'recur';
+    $('barMain').hidden = v !== 'main';
+    $('barKhata').hidden = v !== 'khata';
+    $('barContact').hidden = v !== 'contact';
+    $('barRecur').hidden = v !== 'recur';
+  }
+
+  function renderKhata() {
+    var box = $('khataView');
+    box.textContent = '';
+    var rows = state.contacts.map(function (c) { return { c: c, bal: balOf(c.id) }; });
+    var get = 0, give = 0;
+    rows.forEach(function (r) { if (r.bal > 0) get += r.bal; else give += -r.bal; });
+
+    var card = el('div', 'card');
+    var pair = el('div', 'pair');
+    pair.appendChild(stat('आपको मिलेंगे', get, 'in'));
+    pair.appendChild(stat('आपको देने हैं', give, 'out'));
+    card.appendChild(pair);
+    box.appendChild(card);
+
+    box.appendChild(el('h2', 'sec', 'सभी संपर्क'));
+    if (!rows.length) {
+      var d = el('div', 'empty');
+      d.appendChild(el('strong', null, state.mode === 'loading' ? 'खाता खुल रहा है…' : 'अभी कोई संपर्क नहीं'));
+      d.appendChild(el('p', null, 'नीचे "नया संपर्क जोड़ें" दबाकर नाम और नंबर लिखिए। फिर हर लेन-देन उसके नाम पर लिखिए: "मैंने दिया" या "मुझे मिला"।'));
+      box.appendChild(d);
+      return;
+    }
+    rows.sort(function (a, b) {
+      var d2 = Math.abs(b.bal) - Math.abs(a.bal);
+      return d2 !== 0 ? d2 : a.c.name.localeCompare(b.c.name);
+    });
+    var list = el('div', 'khata-list');
+    rows.forEach(function (r) {
+      var b = el('button', 'crow');
+      b.type = 'button';
+      b.dataset.fk = 'c-' + r.c.id;
+      var left = el('span');
+      left.appendChild(el('span', 'nm', r.c.name));
+      if (r.c.phone) left.appendChild(el('span', 'ph', r.c.phone));
+      var right = el('span', 'bl ' + balClass(r.bal));
+      right.appendChild(el('b', null, r.bal === 0 ? '₹0' : '₹' + fmt(r.bal)));
+      right.appendChild(el('span', null, balWord(r.bal)));
+      b.appendChild(left);
+      b.appendChild(right);
+      b.addEventListener('click', function () { goView('contact', r.c.id); });
+      list.appendChild(b);
+    });
+    box.appendChild(list);
+  }
+
+  function copyRemind() {
+    var ta = $('remtext');
+    if (!ta) return;
+    var done = function () { showToast('संदेश कॉपी हो गया'); };
+    var fallback = function () {
+      ta.focus();
+      ta.select();
+      showToast('संदेश चुन लिया है, अब कॉपी कर लीजिए');
+    };
+    try {
+      navigator.clipboard.writeText(ta.value).then(done, fallback);
+    } catch (e) {
+      fallback();
+    }
+  }
+
+  function txnRow(t) {
+    var tr = el('tr', 'entry');
+    var td = el('td');
+    var b = el('button', 'rowbtn');
+    b.type = 'button';
+    b.dataset.fk = 'trow-' + t.id;
+    b.setAttribute('aria-expanded', state.tOpenId === t.id ? 'true' : 'false');
+    b.appendChild(el('span', 'c', t.note || (t.kind === 'gave' ? 'दिया' : 'मिला')));
+    b.addEventListener('click', function () {
+      state.tOpenId = state.tOpenId === t.id ? null : t.id;
+      state.tConfirmId = null;
+      state.focusKey = 'trow-' + t.id;
+      render();
+    });
+    td.appendChild(b);
+    tr.appendChild(td);
+    tr.appendChild(el('td', 'amt out', t.kind === 'gave' ? fmt(cents(t)) : ''));
+    tr.appendChild(el('td', 'amt in', t.kind === 'got' ? fmt(cents(t)) : ''));
+    return tr;
+  }
+
+  function txnDetailRow(t) {
+    var tr = el('tr', 'detail');
+    var td = el('td');
+    td.colSpan = 3;
+    var acts = el('div', 'acts');
+    if (state.tConfirmId === t.id) {
+      acts.appendChild(el('span', 'ask', 'पक्का हटाएँ?'));
+      var yes = el('button', 'btn-s btn-danger solid', 'हाँ, हटाएँ');
+      yes.type = 'button';
+      yes.addEventListener('click', function () { doDeleteTxn(t.id); });
+      var no = el('button', 'btn-s', 'नहीं');
+      no.type = 'button';
+      no.dataset.fk = 'tno-' + t.id;
+      no.addEventListener('click', function () {
+        state.tConfirmId = null;
+        state.focusKey = 'tdel-' + t.id;
+        render();
+      });
+      acts.appendChild(yes);
+      acts.appendChild(no);
+    } else {
+      var ted = el('button', 'btn-s', 'सुधारें');
+      ted.type = 'button';
+      ted.addEventListener('click', function () { openTxnEdit(t, this); });
+      acts.appendChild(ted);
+      var del = el('button', 'btn-s btn-danger', 'यह लेन-देन हटाएँ');
+      del.type = 'button';
+      del.dataset.fk = 'tdel-' + t.id;
+      del.addEventListener('click', function () {
+        state.tConfirmId = t.id;
+        state.focusKey = 'tno-' + t.id;
+        render();
+      });
+      acts.appendChild(del);
+    }
+    td.appendChild(acts);
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function renderContact() {
+    var box = $('contactView');
+    box.textContent = '';
+    var c = state.contacts.filter(function (x) { return x.id === state.contactId; })[0];
+    if (!c) {
+      state.view = 'khata';
+      state.contactId = null;
+      renderTabs();
+      renderKhata();
+      return;
+    }
+    var back = el('button', 'btn-s', '‹ सभी संपर्क');
+    back.type = 'button';
+    back.dataset.fk = 'back';
+    back.addEventListener('click', function () { goView('khata'); });
+    var topRow = el('div', 'acts');
+    topRow.appendChild(back);
+    if (txnsOf(c.id).length) {
+      var exp = el('button', 'btn-s', 'रिपोर्ट डाउनलोड (Excel)');
+      exp.type = 'button';
+      exp.addEventListener('click', function () { exportContact(c); });
+      topRow.appendChild(exp);
+    }
+    box.appendChild(topRow);
+
+    var head = el('div', 'chead');
+    head.appendChild(el('h2', null, c.name));
+    if (c.phone) head.appendChild(el('p', 'label', c.phone));
+    box.appendChild(head);
+
+    var bal = balOf(c.id);
+    var card = el('div', 'card');
+    card.appendChild(el('p', 'label', bal > 0 ? 'आपको मिलेंगे' : (bal < 0 ? 'आपको देने हैं' : 'हिसाब बराबर')));
+    card.appendChild(el('p', 'big ' + balClass(bal), '₹' + fmt(bal)));
+    box.appendChild(card);
+
+    if (bal > 0) {
+      var rm = el('div', 'remind');
+      rm.appendChild(el('p', 'label', 'याद दिलाने का संदेश'));
+      var ta = el('textarea');
+      ta.id = 'remtext';
+      ta.rows = 3;
+      ta.readOnly = true;
+      ta.value = remindText(c, bal);
+      ta.setAttribute('aria-label', 'याद दिलाने का संदेश');
+      rm.appendChild(ta);
+      var acts = el('div', 'acts');
+      var link = waLink(c.phone, ta.value);
+      if (link) {
+        var a = el('a', 'btn-s', 'WhatsApp पर भेजें');
+        a.href = link;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        acts.appendChild(a);
+      }
+      var cp = el('button', 'btn-s', 'संदेश कॉपी करें');
+      cp.type = 'button';
+      cp.addEventListener('click', copyRemind);
+      acts.appendChild(cp);
+      rm.appendChild(acts);
+      if (!link) rm.appendChild(el('p', 'foot', 'WhatsApp के लिए इस संपर्क में मोबाइल नंबर जोड़ना होगा।'));
+      box.appendChild(rm);
+    }
+
+    box.appendChild(el('h2', 'sec', 'लेन-देन'));
+    var list = sorted(txnsOf(c.id));
+    if (!list.length) {
+      var d = el('div', 'empty');
+      d.appendChild(el('strong', null, 'अभी कोई लेन-देन नहीं'));
+      d.appendChild(el('p', null, 'पैसे दिए हों तो "मैंने दिया" दबाइए। पैसे वापस मिले हों तो "मुझे मिला" दबाइए।'));
+      box.appendChild(d);
+    } else {
+      var wrap = el('div', 'ledger');
+      var table = el('table');
+      table.setAttribute('aria-label', c.name + ' का हिसाब');
+      var cg = el('colgroup');
+      cg.appendChild(el('col'));
+      ['27%', '27%'].forEach(function (w) { var col = el('col'); col.style.width = w; cg.appendChild(col); });
+      table.appendChild(cg);
+      var thead = el('thead');
+      var hr = el('tr');
+      [['विवरण', ''], ['दिया ₹', 'out'], ['मिला ₹', 'in']].forEach(function (h) {
+        var th = el('th', h[1], h[0]);
+        th.scope = 'col';
+        hr.appendChild(th);
+      });
+      thead.appendChild(hr);
+      table.appendChild(thead);
+      var tb = el('tbody');
+      var last = '';
+      list.forEach(function (t) {
+        if (t.date !== last) {
+          last = t.date;
+          var gr = el('tr', 'dategroup');
+          var gd = el('td', null, dateLabel(t.date));
+          gd.colSpan = 3;
+          gr.appendChild(gd);
+          tb.appendChild(gr);
+        }
+        tb.appendChild(txnRow(t));
+        if (state.tOpenId === t.id) tb.appendChild(txnDetailRow(t));
+      });
+      table.appendChild(tb);
+      var gv = 0, gt = 0;
+      list.forEach(function (t) { if (t.kind === 'gave') gv += cents(t); else gt += cents(t); });
+      var tf = el('tfoot');
+      var fr = el('tr');
+      fr.appendChild(el('td', null, 'कुल'));
+      fr.appendChild(el('td', 'amt out', fmt(gv)));
+      fr.appendChild(el('td', 'amt in', fmt(gt)));
+      tf.appendChild(fr);
+      table.appendChild(tf);
+      wrap.appendChild(table);
+      box.appendChild(wrap);
+    }
+
+    var dz = el('div', 'danger-zone acts');
+    if (state.delAsk) {
+      dz.appendChild(el('span', 'ask', 'इस संपर्क का पूरा हिसाब मिट जाएगा। पक्का?'));
+      var y = el('button', 'btn-s btn-danger solid', 'हाँ, हटाएँ');
+      y.type = 'button';
+      y.addEventListener('click', function () { doDeleteContact(c.id); });
+      var n = el('button', 'btn-s', 'नहीं');
+      n.type = 'button';
+      n.dataset.fk = 'cno';
+      n.addEventListener('click', function () { state.delAsk = false; state.focusKey = 'cdel'; render(); });
+      dz.appendChild(y);
+      dz.appendChild(n);
+    } else {
+      var dc = el('button', 'btn-s btn-danger', 'यह संपर्क हटाएँ');
+      dc.type = 'button';
+      dc.dataset.fk = 'cdel';
+      dc.addEventListener('click', function () { state.delAsk = true; state.focusKey = 'cno'; render(); });
+      dz.appendChild(dc);
+    }
+    box.appendChild(dz);
+  }
+
+  // Waits for a write, but never longer than 4 s, so a slow store cannot leave a form stuck open.
+  async function guarded(p) {
+    var timedOut = false;
+    var write = Promise.resolve(p);
+    var slow = new Promise(function (resolve) { setTimeout(function () { timedOut = true; resolve(); }, 4000); });
+    await Promise.race([write, slow]);
+    if (timedOut) write.catch(function () { showToast('सेव नहीं हो पाया। हिसाब जाँच लीजिए।'); });
+    return timedOut;
+  }
+
+  async function doDeleteTxn(id) {
+    try {
+      await guarded(backend.removeTxn(id));
+      state.tOpenId = null;
+      state.tConfirmId = null;
+      showToast('हटा दिया');
+    } catch (e) {
+      showToast('हट नहीं पाया। दोबारा कोशिश कीजिए।');
+    }
+    render();
+  }
+
+  async function doDeleteContact(id) {
+    var ids = txnsOf(id).map(function (t) { return t.id; });
+    try {
+      for (var i = 0; i < ids.length; i++) await guarded(backend.removeTxn(ids[i]));
+      await guarded(backend.removeContact(id));
+      showToast('संपर्क हटा दिया');
+      goView('khata');
+    } catch (e) {
+      showToast('हट नहीं पाया। दोबारा कोशिश कीजिए।');
+    }
+  }
+
+  function openContactForm(opener) {
+    lastOpener = opener || null;
+    $('cname').value = '';
+    $('cphone').value = '';
+    $('cerr').hidden = true;
+    $('csave').disabled = false;
+    $('scrim').hidden = false;
+    $('cform').hidden = false;
+    document.documentElement.classList.add('lock');
+    setTimeout(function () { $('cname').focus(); }, 60);
+  }
+
+  async function submitContact(ev) {
+    ev.preventDefault();
+    var name = $('cname').value.trim();
+    var phone = $('cphone').value.trim();
+    var err = $('cerr');
+    if (!name) {
+      err.textContent = 'नाम लिखिए।';
+      err.hidden = false;
+      $('cname').focus();
+      return;
+    }
+    if (phone && digitsOf(phone).length < 10) {
+      err.textContent = 'मोबाइल नंबर में कम से कम 10 अंक होने चाहिए। नंबर नहीं देना हो तो खाली छोड़िए।';
+      err.hidden = false;
+      return;
+    }
+    if (!backend) {
+      err.textContent = 'हिसाब अभी खुल रहा है। एक पल रुककर फिर दबाइए।';
+      err.hidden = false;
+      return;
+    }
+    $('csave').disabled = true;
+    try {
+      await guarded(backend.addContact({ name: name.slice(0, 60), phone: phone, ts: Date.now() }));
+      closeSheet();
+      render();
+      showToast('संपर्क जुड़ गया');
+    } catch (e) {
+      err.textContent = 'सेव नहीं हो पाया। दोबारा कोशिश कीजिए।';
+      err.hidden = false;
+    } finally {
+      $('csave').disabled = false;
+    }
+  }
+
+  function openTxnEdit(t, opener) {
+    openTxnForm(t.kind, opener);
+    state.tEditId = t.id;
+    $('tTitle').textContent = 'लेन-देन सुधारें';
+    $('tamount').value = String(t.amount);
+    $('tnote').value = t.note;
+    $('tdate').value = t.date;
+    $('tsave').textContent = 'बदलाव सेव करें';
+  }
+
+  function openTxnForm(kind, opener) {
+    lastOpener = opener || null;
+    state.tEditId = null;
+    $('tsave').textContent = 'सेव करें';
+    state.tKind = kind;
+    $('tform').dataset.type = kind === 'got' ? 'in' : 'out';
+    $('tTitle').textContent = kind === 'got' ? 'मुझे मिला' : 'मैंने दिया';
+    $('tamount').value = '';
+    $('tnote').value = '';
+    $('tdate').value = today();
+    $('terr').hidden = true;
+    $('tsave').disabled = false;
+    $('scrim').hidden = false;
+    $('tform').hidden = false;
+    document.documentElement.classList.add('lock');
+    setTimeout(function () { $('tamount').focus(); }, 60);
+  }
+
+  async function submitTxn(ev) {
+    ev.preventDefault();
+    var err = $('terr');
+    var amt = parseAmount($('tamount').value);
+    if (!isFinite(amt) || amt <= 0) {
+      err.textContent = 'रकम लिखिए, जो 0 से ज़्यादा हो। जैसे: 500';
+      err.hidden = false;
+      $('tamount').focus();
+      return;
+    }
+    if (amt > 999999999) {
+      err.textContent = 'रकम बहुत बड़ी है। कृपया जाँच लें।';
+      err.hidden = false;
+      return;
+    }
+    if (!backend || !state.contactId) {
+      err.textContent = 'हिसाब अभी खुल रहा है। एक पल रुककर फिर दबाइए।';
+      err.hidden = false;
+      return;
+    }
+    $('tsave').disabled = true;
+    var t = {
+      contactId: state.contactId,
+      kind: state.tKind,
+      amount: Math.round(amt * 100) / 100,
+      note: $('tnote').value.trim().slice(0, 80),
+      date: $('tdate').value || today(),
+      ts: Date.now()
+    };
+    var tEditing = state.tEditId;
+    if (tEditing) {
+      var torig = state.txns.filter(function (x) { return x.id === tEditing; })[0];
+      if (torig) t.ts = torig.ts;
+    }
+    try {
+      await guarded(tEditing ? backend.updateTxn(tEditing, t) : backend.addTxn(t));
+      closeSheet();
+      render();
+      showToast('सेव हो गया');
+    } catch (e) {
+      err.textContent = 'सेव नहीं हो पाया। दोबारा कोशिश कीजिए।';
+      err.hidden = false;
+    } finally {
+      $('tsave').disabled = false;
+    }
+  }
+
+  /* ---------- monthly budget ---------- */
+
+  function openBudgetForm(opener) {
+    lastOpener = opener || null;
+    $('bamount').value = state.budget > 0 ? String(state.budget) : '';
+    $('berr').hidden = true;
+    $('bsave').disabled = false;
+    $('scrim').hidden = false;
+    $('bform').hidden = false;
+    document.documentElement.classList.add('lock');
+    setTimeout(function () { $('bamount').focus(); }, 60);
+  }
+
+  async function submitBudget(ev) {
+    ev.preventDefault();
+    var raw = $('bamount').value.trim();
+    var n = raw === '' ? 0 : parseAmount(raw);
+    var err = $('berr');
+    if (!isFinite(n) || n < 0 || n > 999999999) {
+      err.textContent = 'सही रकम लिखिए। जैसे: 15000';
+      err.hidden = false;
+      return;
+    }
+    if (!backend) {
+      err.textContent = 'हिसाब अभी खुल रहा है। एक पल रुककर फिर दबाइए।';
+      err.hidden = false;
+      return;
+    }
+    n = Math.round(n * 100) / 100;
+    $('bsave').disabled = true;
+    try {
+      await guarded(backend.setBudget(n));
+      state.budget = n;
+      closeSheet();
+      render();
+      showToast(n > 0 ? 'बजट सेव हो गया' : 'बजट हटा दिया');
+    } catch (e) {
+      err.textContent = 'सेव नहीं हो पाया। दोबारा कोशिश कीजिए।';
+      err.hidden = false;
+    } finally {
+      $('bsave').disabled = false;
+    }
+  }
+
+  /* ---------- report download (CSV opens in Excel) ---------- */
+
+  function csvCell(v) {
+    var s = String(v == null ? '' : v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function csvText(rows) {
+    return '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n';
+  }
+  async function saveCsv(filename, text) {
+    var dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    if (!dl) {
+      showToast('इस जगह से डाउनलोड नहीं हो सकता');
+      return;
+    }
+    try {
+      await dl.save({ filename: filename, data: text });
+      showToast('फ़ाइल सेव हो गई');
+    } catch (e) {
+      if (e && e.code === 'declined') return;
+      showToast('डाउनलोड नहीं हो पाया');
+    }
+  }
+  function exportMonth() {
+    var list = state.entries.filter(function (e) { return ymOf(e.date) === state.month; });
+    list.sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : a.ts - b.ts); });
+    var rows = [['तारीख़', 'प्रकार', 'श्रेणी', 'विवरण', 'रकम (₹)']];
+    list.forEach(function (e) {
+      rows.push([e.date, e.type === 'in' ? 'आमदनी' : 'खर्च', e.cat, e.note, e.amount]);
+    });
+    var s = sums(list);
+    rows.push([]);
+    rows.push(['', '', '', 'कुल आमदनी', s['in'] / 100]);
+    rows.push(['', '', '', 'कुल खर्च', s.out / 100]);
+    rows.push(['', '', '', 'बचत', s.bal / 100]);
+    saveCsv('mera-hisab-' + state.month + '.csv', csvText(rows));
+  }
+  function exportContact(c) {
+    var rows = [['तारीख़', 'क्या हुआ', 'विवरण', 'रकम (₹)']];
+    sorted(txnsOf(c.id)).reverse().forEach(function (t) {
+      rows.push([t.date, t.kind === 'gave' ? 'मैंने दिया' : 'मुझे मिला', t.note, t.amount]);
+    });
+    var b = balOf(c.id);
+    rows.push([]);
+    rows.push(['', b >= 0 ? 'आपको मिलेंगे' : 'आपको देने हैं', c.name, Math.abs(b) / 100]);
+    saveCsv('khata-' + c.name.replace(/[^\p{L}\p{N}]+/gu, '-') + '.csv', csvText(rows));
+  }
+
+  /* ---------- EMI / SIP / bills ---------- */
+
+  var KINDS = { emi: 'EMI', sip: 'SIP', bill: 'बिल / किराया', other: 'अन्य' };
+  var KIND_CAT = { emi: 'EMI-किस्त', sip: 'SIP-निवेश', bill: 'बिल-सब्सक्रिप्शन', other: 'अन्य' };
+
+  function cleanRec(o) {
+    if (!o || typeof o.name !== 'string' || !o.name.trim()) return null;
+    var a = Number(o.amount);
+    if (!isFinite(a) || a <= 0) return null;
+    var day = Math.round(Number(o.day));
+    if (!(day >= 1 && day <= 31)) day = 1;
+    return {
+      id: String(o.id),
+      name: o.name.trim(),
+      kind: KINDS[o.kind] ? o.kind : 'other',
+      amount: a,
+      day: day,
+      total: Math.max(0, Math.round(Number(o.total) || 0)),
+      paid: Math.max(0, Math.round(Number(o.paid) || 0)),
+      lastPaid: typeof o.lastPaid === 'string' ? o.lastPaid : '',
+      ts: Number(o.ts) || 0
+    };
+  }
+  function recBody(r, patch) {
+    var o = { name: r.name, kind: r.kind, amount: r.amount, day: r.day, total: r.total, paid: r.paid, lastPaid: r.lastPaid, ts: r.ts };
+    Object.keys(patch || {}).forEach(function (k) { o[k] = patch[k]; });
+    return o;
+  }
+  function dueDate(y, m, day) {
+    var last = new Date(y, m + 1, 0).getDate();
+    return new Date(y, m, Math.min(day, last));
+  }
+  // key: done | paid | late | today | soon | later
+  function recStatus(r) {
+    if (r.total > 0 && r.paid >= r.total) return { key: 'done', days: 9999, text: 'सारी किस्तें पूरी हो गईं' };
+    var now = new Date();
+    var y = now.getFullYear(), m = now.getMonth();
+    var paidThis = r.lastPaid === ymOf(today());
+    var due = dueDate(y, paidThis ? m + 1 : m, r.day);
+    var days = Math.round((due - new Date(y, m, now.getDate())) / 86400000);
+    var when = due.getDate() + ' ' + MONTHS[due.getMonth()];
+    if (paidThis) return { key: 'paid', days: 1000 + days, text: 'इस महीने भर दिया · अगली तारीख़ ' + when };
+    if (days < 0) return { key: 'late', days: days, text: (-days) + ' दिन की देर · तारीख़ थी ' + when };
+    if (days === 0) return { key: 'today', days: 0, text: 'आज देना है' };
+    if (days <= 3) return { key: 'soon', days: days, text: days + ' दिन बाकी · ' + when };
+    return { key: 'later', days: days, text: 'तारीख़ ' + when + ' · ' + days + ' दिन बाकी' };
+  }
+
+  function renderDue() {
+    var box = $('dueBanner');
+    var urgent = state.recs.map(function (r) { return { r: r, s: recStatus(r) }; })
+      .filter(function (x) { return x.s.key === 'late' || x.s.key === 'today' || x.s.key === 'soon'; })
+      .sort(function (a, b) { return a.s.days - b.s.days; });
+    box.textContent = '';
+    if (!urgent.length) { box.hidden = true; return; }
+    box.hidden = false;
+    var names = urgent.slice(0, 3).map(function (x) { return x.r.name; }).join(', ') + (urgent.length > 3 ? ' और ' + (urgent.length - 3) + ' और' : '');
+    box.appendChild(el('span', 't', urgent.length + ' भुगतान जल्दी देने हैं: ' + names));
+    var b = el('button', 'btn-s', 'देखें');
+    b.type = 'button';
+    b.addEventListener('click', function () { goView('recur'); });
+    box.appendChild(b);
+  }
+
+  function renderRecur() {
+    var box = $('recurView');
+    box.textContent = '';
+    var ym = ymOf(today());
+    var need = 0, done = 0, emiLeft = 0;
+    state.recs.forEach(function (r) {
+      var finished = r.total > 0 && r.paid >= r.total;
+      if (r.lastPaid === ym) done += Math.round(r.amount * 100);
+      else if (!finished) need += Math.round(r.amount * 100);
+      if (r.kind === 'emi' && r.total > r.paid) emiLeft += (r.total - r.paid) * Math.round(r.amount * 100);
+    });
+    var card = el('div', 'card');
+    var pair = el('div', 'pair');
+    pair.appendChild(stat('इस महीने देना बाकी', need, 'out'));
+    pair.appendChild(stat('इस महीने भर दिया', done, 'in'));
+    card.appendChild(pair);
+    if (emiLeft > 0) {
+      var pl = el('p', 'label', 'सारी EMI की बाकी रकम: ₹' + fmt(emiLeft));
+      pl.style.margin = '12px 0 0';
+      card.appendChild(pl);
+    }
+    box.appendChild(card);
+
+    box.appendChild(el('h2', 'sec', 'नियमित भुगतान'));
+    if (!state.recs.length) {
+      var d = el('div', 'empty');
+      d.appendChild(el('strong', null, state.mode === 'loading' ? 'खुल रहा है…' : 'अभी कोई भुगतान नहीं जुड़ा'));
+      d.appendChild(el('p', null, 'EMI, SIP, किराया या मोबाइल बिल जैसा जो हर महीने जाता है, उसे नीचे "नया भुगतान" से जोड़िए। ऐप तारीख़ से पहले ऊपर याद दिलाएगा, और "भर दिया" दबाते ही खर्च में अपने आप लिख देगा।'));
+      d.appendChild(el('p', 'foot', 'ध्यान दीजिए: असली पैसा यहाँ से नहीं कटता। भुगतान आप अपने बैंक या UPI ऐप से करेंगे।'));
+      box.appendChild(d);
+      return;
+    }
+    var rows = state.recs.map(function (r) { return { r: r, s: recStatus(r) }; })
+      .sort(function (a, b) { return a.s.days - b.s.days; });
+    var list = el('div', 'rlist');
+    rows.forEach(function (x) { list.appendChild(recItem(x.r, x.s)); });
+    box.appendChild(list);
+    box.appendChild(el('p', 'foot', 'असली पैसा यहाँ से नहीं कटता। भुगतान अपने बैंक या UPI ऐप से कीजिए, फिर यहाँ "भर दिया" दबाइए।'));
+  }
+
+  function recItem(r, s) {
+    var it = el('div', 'ritem');
+    var top = el('div', 'rtop');
+    var left = el('div', 'rname');
+    left.appendChild(el('span', 'rkind', KINDS[r.kind]));
+    left.appendChild(document.createTextNode(r.name));
+    top.appendChild(left);
+    top.appendChild(el('div', 'ramt', '₹' + fmt(Math.round(r.amount * 100))));
+    it.appendChild(top);
+    it.appendChild(el('p', 'rstat ' + (s.key === 'later' ? '' : s.key), s.text));
+    if (r.total > 0) {
+      var pct = Math.min(100, Math.round(r.paid / r.total * 100));
+      var pr = el('div', 'rprog');
+      pr.appendChild(el('p', 'label', 'किस्त ' + Math.min(r.paid, r.total) + ' / ' + r.total + ' · बाकी ' + Math.max(0, r.total - r.paid)));
+      var tr = el('div', 'btrack');
+      tr.setAttribute('role', 'progressbar');
+      tr.setAttribute('aria-valuemin', '0');
+      tr.setAttribute('aria-valuemax', '100');
+      tr.setAttribute('aria-valuenow', String(pct));
+      var f = el('div', 'bfill');
+      f.style.width = Math.max(2, pct) + '%';
+      tr.appendChild(f);
+      pr.appendChild(tr);
+      it.appendChild(pr);
+    }
+    var act = el('div', 'ract');
+    var canPay = s.key !== 'done' && s.key !== 'paid';
+    if (state.rConfirm === r.id) {
+      act.appendChild(el('span', 'ask', 'पक्का हटाएँ?'));
+      var yes = el('button', 'btn-s btn-danger solid', 'हाँ, हटाएँ');
+      yes.type = 'button';
+      yes.addEventListener('click', function () { doDeleteRec(r.id); });
+      var no = el('button', 'btn-s', 'नहीं');
+      no.type = 'button';
+      no.dataset.fk = 'rno-' + r.id;
+      no.addEventListener('click', function () { state.rConfirm = null; state.focusKey = 'rdel-' + r.id; render(); });
+      act.appendChild(yes);
+      act.appendChild(no);
+    } else {
+      if (canPay) {
+        var pay = el('button', 'btn-s btn-pay', 'भर दिया ✓');
+        pay.type = 'button';
+        pay.dataset.fk = 'rpay-' + r.id;
+        pay.addEventListener('click', function () { payRec(r, pay); });
+        act.appendChild(pay);
+      }
+      var ed = el('button', 'btn-s', 'सुधारें');
+      ed.type = 'button';
+      ed.addEventListener('click', function () { openRecForm(r, this); });
+      act.appendChild(ed);
+      var del = el('button', 'btn-s btn-danger', 'हटाएँ');
+      del.type = 'button';
+      del.dataset.fk = 'rdel-' + r.id;
+      del.addEventListener('click', function () { state.rConfirm = r.id; state.focusKey = 'rno-' + r.id; render(); });
+      act.appendChild(del);
+    }
+    it.appendChild(act);
+    return it;
+  }
+
+  async function payRec(r, btn) {
+    if (!backend) return;
+    var ym = ymOf(today());
+    if (r.lastPaid === ym) return;
+    btn.disabled = true;
+    try {
+      await guarded(backend.updateRec(r.id, recBody(r, { paid: r.paid + 1, lastPaid: ym })));
+      await guarded(backend.add({ type: 'out', amount: r.amount, cat: KIND_CAT[r.kind], note: r.name, date: today(), ts: Date.now() }));
+      showToast('भर दिया लिखा गया, खर्च में जुड़ गया');
+    } catch (e) {
+      showToast('सेव नहीं हो पाया। हिसाब जाँच लीजिए।');
+      btn.disabled = false;
+    }
+    render();
+  }
+
+  async function doDeleteRec(id) {
+    try {
+      await guarded(backend.removeRec(id));
+      state.rConfirm = null;
+      showToast('हटा दिया');
+    } catch (e) {
+      showToast('हट नहीं पाया। दोबारा कोशिश कीजिए।');
+    }
+    render();
+  }
+
+  function buildKindChips() {
+    var box = $('rkinds');
+    box.textContent = '';
+    Object.keys(KINDS).forEach(function (k) {
+      var b = el('button', 'chip', KINDS[k]);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', state.rKind === k ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        state.rKind = k;
+        Array.prototype.forEach.call(box.children, function (c, i) {
+          c.setAttribute('aria-pressed', Object.keys(KINDS)[i] === k ? 'true' : 'false');
+        });
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function openRecForm(r, opener) {
+    lastOpener = opener || null;
+    state.rEditId = r ? r.id : null;
+    state.rKind = r ? r.kind : 'emi';
+    buildKindChips();
+    $('rTitle').textContent = r ? 'भुगतान सुधारें' : 'नया नियमित भुगतान';
+    $('rname').value = r ? r.name : '';
+    $('ramount').value = r ? String(r.amount) : '';
+    $('rday').value = r ? String(r.day) : '';
+    $('rtotal').value = r && r.total ? String(r.total) : '';
+    $('rpaid').value = r ? String(r.paid) : '';
+    $('rerr').hidden = true;
+    $('rsave').disabled = false;
+    $('scrim').hidden = false;
+    $('rform').hidden = false;
+    document.documentElement.classList.add('lock');
+    setTimeout(function () { $('rname').focus(); }, 60);
+  }
+
+  async function submitRec(ev) {
+    ev.preventDefault();
+    var err = $('rerr');
+    var fail = function (m) { err.textContent = m; err.hidden = false; };
+    var name = $('rname').value.trim();
+    var amt = parseAmount($('ramount').value);
+    var day = Math.round(parseAmount($('rday').value));
+    var totalRaw = $('rtotal').value.trim();
+    var paidRaw = $('rpaid').value.trim();
+    var total = totalRaw === '' ? 0 : Math.round(parseAmount(totalRaw));
+    var paid = paidRaw === '' ? 0 : Math.round(parseAmount(paidRaw));
+    if (!name) return fail('नाम लिखिए। जैसे: बाइक की EMI');
+    if (!isFinite(amt) || amt <= 0) return fail('हर महीने की रकम लिखिए। जैसे: 3500');
+    if (!(day >= 1 && day <= 31)) return fail('तारीख़ 1 से 31 के बीच लिखिए।');
+    if (!isFinite(total) || total < 0 || total > 1200) return fail('कुल किस्तें 0 से 1200 के बीच लिखिए।');
+    if (!isFinite(paid) || paid < 0 || (total > 0 && paid > total)) return fail('भर चुकी किस्तें कुल किस्तों से ज़्यादा नहीं हो सकतीं।');
+    if (!backend) return fail('हिसाब अभी खुल रहा है। एक पल रुककर फिर दबाइए।');
+    var editId = state.rEditId;
+    var old = editId ? state.recs.filter(function (x) { return x.id === editId; })[0] : null;
+    var body = {
+      name: name.slice(0, 60),
+      kind: state.rKind,
+      amount: Math.round(amt * 100) / 100,
+      day: day,
+      total: total,
+      paid: paid,
+      lastPaid: old ? old.lastPaid : '',
+      ts: old ? old.ts : Date.now()
+    };
+    $('rsave').disabled = true;
+    try {
+      await guarded(editId ? backend.updateRec(editId, body) : backend.addRec(body));
+      closeSheet();
+      render();
+      showToast('सेव हो गया');
+    } catch (e) {
+      fail('सेव नहीं हो पाया। दोबारा कोशिश कीजिए।');
+    } finally {
+      $('rsave').disabled = false;
+    }
+  }
+
+  /* ---------- EMI and SIP calculators (estimates only) ---------- */
+
+  var CALC = {
+    emi: {
+      labels: ['कर्ज़ की रकम (₹)', 'सालाना ब्याज (%)', 'कितने महीने के लिए?'],
+      vals: ['500000', '10', '36'],
+      note: 'यह सिर्फ़ अनुमान है। बैंक की असली EMI में फ़ीस या टैक्स जुड़ सकते हैं।'
+    },
+    sip: {
+      labels: ['हर महीने की SIP (₹)', 'अनुमानित सालाना रिटर्न (%)', 'कितने साल?'],
+      vals: ['5000', '12', '10'],
+      note: 'यह सिर्फ़ अनुमान है, गारंटी नहीं। बाज़ार में असली रिटर्न ऊपर-नीचे होता रहता है।'
+    }
+  };
+
+  function calcSetMode(mode) {
+    state.calcMode = mode;
+    $('calcEmi').setAttribute('aria-pressed', mode === 'emi' ? 'true' : 'false');
+    $('calcSip').setAttribute('aria-pressed', mode === 'sip' ? 'true' : 'false');
+    ['c1', 'c2', 'c3'].forEach(function (id, i) {
+      $(id + 'l').textContent = CALC[mode].labels[i];
+      $(id).value = CALC[mode].vals[i];
+    });
+    $('calcNote').textContent = CALC[mode].note;
+    calcRender();
+  }
+
+  function money(x) { return '₹' + fmt(Math.round(x * 100)); }
+
+  function calcRender() {
+    var out = $('calcOut');
+    out.textContent = '';
+    var a = parseAmount($('c1').value), r = parseAmount($('c2').value), t = parseAmount($('c3').value);
+    if (!isFinite(a) || !isFinite(r) || !isFinite(t) || a <= 0 || t <= 0 || r < 0 || r > 100) {
+      out.textContent = 'तीनों खानों में सही संख्या लिखिए।';
+      return;
+    }
+    var dl = el('dl');
+    var add = function (k, v, cls) { dl.appendChild(el('dt', null, k)); dl.appendChild(el('dd', cls || null, v)); };
+    if (state.calcMode === 'emi') {
+      var n = Math.round(t);
+      if (n < 1 || n > 600) { out.textContent = 'महीने 1 से 600 के बीच लिखिए।'; return; }
+      var i = r / 1200;
+      var emi = i === 0 ? a / n : a * i * Math.pow(1 + i, n) / (Math.pow(1 + i, n) - 1);
+      var total = emi * n;
+      add('हर महीने की EMI', money(emi), 'big2');
+      add('कुल ब्याज', money(total - a));
+      add('कुल चुकाना पड़ेगा', money(total));
+    } else {
+      var months = Math.round(t * 12);
+      if (months < 1 || months > 600) { out.textContent = 'साल 1 से 50 के बीच लिखिए।'; return; }
+      var j = r / 1200;
+      var fv = j === 0 ? a * months : a * (Math.pow(1 + j, months) - 1) / j * (1 + j);
+      var inv = a * months;
+      add('अंत में अनुमानित रकम', money(fv), 'big2');
+      add('आपका कुल निवेश', money(inv));
+      add('अनुमानित कमाई', money(fv - inv));
+    }
+    out.appendChild(dl);
+  }
+
+  function openCalc(opener) {
+    lastOpener = opener || null;
+    calcSetMode('emi');
+    $('scrim').hidden = false;
+    $('calcform').hidden = false;
+    document.documentElement.classList.add('lock');
+  }
+
+  /* ---------- storage ---------- */
+
+  function loadLocal() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+      return arr.map(clean).filter(Boolean);
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveLocal() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state.entries));
+      state.localOk = true;
+    } catch (e) {
+      state.localOk = false;
+    }
+  }
+
+  function startLocal() {
+    state.entries = loadLocal();
+    state.mode = 'local';
+    backend = {
+      add: function (e) {
+        e.id = 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        state.entries.push(e);
+        saveLocal();
+        return Promise.resolve();
+      },
+      remove: function (id) {
+        state.entries = state.entries.filter(function (x) { return x.id !== id; });
+        saveLocal();
+        return Promise.resolve();
+      },
+      addContact: function (o) {
+        o.id = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        state.contacts.push(cleanContact(o));
+        saveKhata();
+        return Promise.resolve();
+      },
+      removeContact: function (id) {
+        state.contacts = state.contacts.filter(function (x) { return x.id !== id; });
+        saveKhata();
+        return Promise.resolve();
+      },
+      addTxn: function (o) {
+        o.id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        state.txns.push(cleanTxn(o));
+        saveKhata();
+        return Promise.resolve();
+      },
+      removeTxn: function (id) {
+        state.txns = state.txns.filter(function (x) { return x.id !== id; });
+        saveKhata();
+        return Promise.resolve();
+      },
+      update: function (id, e) {
+        e.id = id;
+        state.entries = state.entries.map(function (x) { return x.id === id ? clean(e) : x; });
+        saveLocal();
+        return Promise.resolve();
+      },
+      updateTxn: function (id, o) {
+        o.id = id;
+        state.txns = state.txns.map(function (x) { return x.id === id ? cleanTxn(o) : x; });
+        saveKhata();
+        return Promise.resolve();
+      },
+      addRec: function (o) {
+        o.id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        state.recs.push(cleanRec(o));
+        saveKhata();
+        return Promise.resolve();
+      },
+      updateRec: function (id, o) {
+        o.id = id;
+        state.recs = state.recs.map(function (x) { return x.id === id ? cleanRec(o) : x; });
+        saveKhata();
+        return Promise.resolve();
+      },
+      removeRec: function (id) {
+        state.recs = state.recs.filter(function (x) { return x.id !== id; });
+        saveKhata();
+        return Promise.resolve();
+      },
+      setBudget: function (n) {
+        state.budget = n;
+        saveKhata();
+        return Promise.resolve();
+      }
+    };
+    var k = loadKhata();
+    state.contacts = k.contacts;
+    state.txns = k.txns;
+    state.recs = k.recs;
+    state.budget = k.budget;
+    render();
+  }
+
+  function loadKhata() {
+    try {
+      var o = JSON.parse(localStorage.getItem(STORE_KEY + '-khata') || '{}');
+      return {
+        contacts: (o.contacts || []).map(cleanContact).filter(Boolean),
+        txns: (o.txns || []).map(cleanTxn).filter(Boolean),
+        recs: (o.recs || []).map(cleanRec).filter(Boolean),
+        budget: Number(o.budget) || 0
+      };
+    } catch (e) {
+      return { contacts: [], txns: [], recs: [], budget: 0 };
+    }
+  }
+  function saveKhata() {
+    try {
+      localStorage.setItem(STORE_KEY + '-khata', JSON.stringify({ contacts: state.contacts, txns: state.txns, recs: state.recs, budget: state.budget }));
+      state.localOk = true;
+    } catch (e) {
+      state.localOk = false;
+    }
+  }
+
+  function startDb(db, uid) {
+    var col = db.collection('data/users/' + uid);
+    var book = db.doc('data/users/' + uid + '/book');
+    var ccol = book.collection('contacts');
+    var tcol = book.collection('txns');
+    var rcol = book.collection('recurring');
+    var pref = book.collection('prefs').doc('budget');
+    backend = {
+      add: function (e) { return col.doc().set(e); },
+      remove: function (id) { return col.doc(id).delete(); },
+      addContact: function (o) { return ccol.doc().set(o); },
+      removeContact: function (id) { return ccol.doc(id).delete(); },
+      addTxn: function (o) { return tcol.doc().set(o); },
+      removeTxn: function (id) { return tcol.doc(id).delete(); },
+      update: function (id, e) { return col.doc(id).set(e); },
+      updateTxn: function (id, o) { return tcol.doc(id).set(o); },
+      addRec: function (o) { return rcol.doc().set(o); },
+      updateRec: function (id, o) { return rcol.doc(id).set(o); },
+      removeRec: function (id) { return rcol.doc(id).delete(); },
+      setBudget: function (n) { return pref.set({ amount: n }); }
+    };
+    var onErr = function (err) {
+      var p = $('dbg');
+      p.textContent = 'तकनीकी गड़बड़ी (उधार खाता): ' + ((err && (err.code || err.message)) || 'अज्ञात');
+      p.hidden = false;
+    };
+    ccol.onSnapshot(function (snap) {
+      state.contacts = snap.docs.map(function (d) {
+        return cleanContact(Object.assign({}, d.data() || {}, { id: d.id }));
+      }).filter(Boolean);
+      render();
+    }, onErr);
+    rcol.onSnapshot(function (snap) {
+      state.recs = snap.docs.map(function (d) {
+        return cleanRec(Object.assign({}, d.data() || {}, { id: d.id }));
+      }).filter(Boolean);
+      render();
+    }, onErr);
+    pref.onSnapshot(function (snap) {
+      var v = snap.exists ? Number((snap.data() || {}).amount) : 0;
+      state.budget = isFinite(v) && v > 0 ? v : 0;
+      render();
+    }, onErr);
+    tcol.orderBy('date', 'desc').limit(1000).onSnapshot(function (snap) {
+      state.txns = snap.docs.map(function (d) {
+        return cleanTxn(Object.assign({}, d.data() || {}, { id: d.id }));
+      }).filter(Boolean);
+      render();
+    }, onErr);
+    col.orderBy('date', 'desc').limit(1000).onSnapshot(function (snap) {
+      state.entries = snap.docs.map(function (d) {
+        // d.data() is frozen, so copy it into a new object before adding the id
+        return clean(Object.assign({}, d.data() || {}, { id: d.id }));
+      }).filter(Boolean);
+      state.mode = 'db';
+      render();
+    }, function (err) {
+      state.mode = 'error';
+      render();
+      var p = $('dbg');
+      p.textContent = 'तकनीकी गड़बड़ी (हिसाब पढ़ते समय): ' + ((err && (err.code || err.message)) || 'अज्ञात');
+      p.hidden = false;
+    });
+  }
+
+  async function init() {
+    render();
+    var c = window.claude;
+    if (c && typeof c.use === 'function') {
+      try {
+        var res = await Promise.all([c.use('db'), c.use('user')]);
+        var db = res[0];
+        var user = res[1];
+        var uid = user ? await user.id() : null;
+        if (db && uid) {
+          startDb(db, uid);
+          return;
+        }
+      } catch (e) { /* fall through to local mode */ }
+    }
+    startLocal();
+  }
+
+  /* ---------- wiring ---------- */
+
+  $('prev').addEventListener('click', function () {
+    state.month = shift(state.month, -1);
+    state.openId = null;
+    state.confirmId = null;
+    render();
+  });
+  $('next').addEventListener('click', function () {
+    if (state.month >= ymOf(today())) return;
+    state.month = shift(state.month, 1);
+    state.openId = null;
+    state.confirmId = null;
+    render();
+  });
+  $('addIn').addEventListener('click', function () { openSheet('in', this); });
+  $('addOut').addEventListener('click', function () { openSheet('out', this); });
+  $('segIn').addEventListener('click', function () { setType('in'); });
+  $('segOut').addEventListener('click', function () { setType('out'); });
+  $('cancel').addEventListener('click', closeSheet);
+  $('tabMain').addEventListener('click', function () { goView('main'); });
+  $('tabKhata').addEventListener('click', function () { goView('khata'); });
+  $('tabRecur').addEventListener('click', function () { goView('recur'); });
+  $('addRec').addEventListener('click', function () { openRecForm(null, this); });
+  $('calcBtn').addEventListener('click', function () { openCalc(this); });
+  $('rform').addEventListener('submit', submitRec);
+  $('rcancel').addEventListener('click', closeSheet);
+  $('calcClose').addEventListener('click', closeSheet);
+  $('calcEmi').addEventListener('click', function () { calcSetMode('emi'); });
+  $('calcSip').addEventListener('click', function () { calcSetMode('sip'); });
+  ['c1', 'c2', 'c3'].forEach(function (id) { $(id).addEventListener('input', calcRender); });
+  $('bform').addEventListener('submit', submitBudget);
+  $('bcancel').addEventListener('click', closeSheet);
+  $('exportBtn').addEventListener('click', exportMonth);
+  $('search').addEventListener('input', function () { state.query = this.value; render(); });
+  $('addContact').addEventListener('click', function () { openContactForm(this); });
+  $('gaveBtn').addEventListener('click', function () { openTxnForm('gave', this); });
+  $('gotBtn').addEventListener('click', function () { openTxnForm('got', this); });
+  $('cform').addEventListener('submit', submitContact);
+  $('tform').addEventListener('submit', submitTxn);
+  $('ccancel').addEventListener('click', closeSheet);
+  $('tcancel').addEventListener('click', closeSheet);
+  $('quickFill').addEventListener('click', function () { applyQuick(false); });
+  $('voice').addEventListener('click', function () { openSheet('out', this, true); });
+  var quickTimer = null;
+  $('quick').addEventListener('input', function () {
+    clearTimeout(quickTimer);
+    quickTimer = setTimeout(function () { applyQuick(true); }, 700);
+  });
+  $('scrim').addEventListener('click', closeSheet);
+  $('sheet').addEventListener('submit', submitSheet);
+  function showDbg(msg) {
+    var p = $('dbg');
+    p.textContent = 'तकनीकी गड़बड़ी: ' + msg;
+    p.hidden = false;
+  }
+  window.addEventListener('error', function (e) { showDbg(e.message || 'अज्ञात'); });
+  window.addEventListener('unhandledrejection', function (e) {
+    showDbg((e.reason && e.reason.message) || String(e.reason || 'अज्ञात'));
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('scrim').hidden) closeSheet();
+  });
+
+  init();
+})();
+</script>
+
+</body></html>
